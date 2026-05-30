@@ -2,7 +2,7 @@
 
 # thirstyLLM 💧
 
-### Track the water footprint of your Claude usage — locally, privately, with no API key.
+### Track the water footprint of your Claude usage locally, privately, with no API key.
 
 [![Live dashboard](https://img.shields.io/badge/live-dashboard-06b6d4?style=flat-square)](https://pentasir.github.io/thirsty-llm/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
