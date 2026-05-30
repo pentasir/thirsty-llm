@@ -1,14 +1,14 @@
-# How thirstyLLM was built
+# How ThirstyLLM was built
 
-**thirstyLLM** estimates how much water your Claude usage consumes, based on [Li et al. 2023](https://arxiv.org/abs/2304.03271) (*"Making AI Less 'Thirsty'"*). This page is the honest build story — not a marketing page.
+**ThirstyLLM** estimates how much water your Claude usage consumes, based on [Li et al. 2023](https://arxiv.org/abs/2304.03271) (*"Making AI Less 'Thirsty'"*). This page is the honest build story & not a marketing page.
 
 ---
 
 ## Why this exists
 
-Every LLM prompt runs on hardware in a data centre that needs cooling water. Li et al. showed that a simple ChatGPT conversation can consume on the order of a **500 mL bottle** of water in the US — but no one shipped a tool that hooks that research into *your* actual usage.
+Every LLM prompt runs on hardware in a data centre that needs cooling water. Li et al. showed that a simple ChatGPT conversation can consume on the order of a **500 mL bottle** of water in the US but no one shipped a tool that hooks that research into *your* actual usage. I was also personally curious about my water usage -- there is a tool to measure LLM energy usage but none for water usage. 
 
-thirstyLLM closes that gap for Claude Code users: capture token counts locally, estimate water with a published methodology, show results in a browser — **without an API key and without sending your data anywhere.**
+ThirstyLLM closes that gap for Claude Code users: capture token counts locally, estimate water with a published methodology, show results in a browser  **without an API key and without sending your data anywhere.**
 
 ---
 
@@ -43,17 +43,17 @@ index.html  →  derives water from formula.json, renders locally
 
 **Single source of truth:** `formula.json` holds all constants. The skill reads it at display time; the dashboard inlines a copy so it can run as one offline file.
 
-**Timezone:** Log timestamps are stored in UTC. The dashboard converts to the viewer's local date for "today" and "this week" — so "today" means your today, not UTC midnight.
+**Timezone:** Log timestamps are stored in UTC. The dashboard converts to the viewer's local date for "today" and "this week" so "today" means your today, not UTC midnight.
 
 ---
 
 ## The hardest calibration problem: cache reads
 
-Not all tokens cost the same compute. Output tokens drive most of the work; cache reads (reusing prior context) are much cheaper — but not free.
+Not all tokens cost the same compute. Output tokens drive most of the work; cache reads (reusing prior context) are much cheaper but not free.
 
 Early versions weighted cache reads too high. In long Claude Code sessions with millions of cache-read tokens, estimates ballooned to **litres per turn**, which contradicted Li et al.'s whole-bottle-per-conversation anchor.
 
-The fix: a deliberate **floor weight** (0.001×) below what raw pricing would suggest, with the deviation documented and absorbed into the ±50% accuracy band. A future formula version should model attention as `cache_size × output_tokens` — that needs data Anthropic doesn't publish.
+The fix: a deliberate **floor weight** (0.001×) below what raw pricing would suggest, with the deviation documented and absorbed into the ±50% accuracy band. A future formula version should model attention as `cache_size × output_tokens` that needs data Anthropic doesn't publish.
 
 ---
 
@@ -67,7 +67,7 @@ Multipliers are derived from Anthropic's published output-token pricing (verifie
 | Sonnet 4.5 / 4.6 | $15/MTok | 1.00× (baseline) |
 | Opus 4.5–4.8 | $25/MTok | 1.67× |
 
-Pricing includes margin — treat multipliers as ±factor-of-2. Re-check the live pricing page when Anthropic updates rates.
+Pricing includes margin. Treat multipliers as ±factor-of-2. Re-check the live pricing page when Anthropic updates rates.
 
 ---
 
@@ -81,7 +81,7 @@ Built in a week with a deliberate split:
 
 Key lesson from the audit loop: **"pricing-derived" numbers must be re-checked against the live pricing page every release** — carrying forward stale multipliers caused a 6× Haiku overcount until we verified against anthropic.com/pricing.
 
-The full session-by-session case study (patches, tables, audit trail) is kept private for portfolio use — this page is the public summary.
+The full session-by-session case study (patches, tables, audit trail) is kept private for portfolio use (hire me pls) — this page is the public summary.
 
 ---
 
