@@ -52,7 +52,7 @@ The dashboard is the part people worry about. It isn't a website that takes your
 
 ## Install
 
-Requirements: macOS/Linux, [Node.js](https://nodejs.org), and Claude Code.
+Requirements: [Node.js](https://nodejs.org), Claude Code, and a Bash shell (built in on macOS/Linux; on Windows use **WSL** or **Git Bash** — see below).
 
 ```bash
 git clone https://github.com/pentasir/thirsty-llm.git
@@ -61,6 +61,15 @@ bash install.sh
 ```
 
 The installer copies the skill into `~/.claude/skills/water`, installs `formula.json`, and registers a `Stop` hook in `~/.claude/settings.json` (idempotent — safe to re-run). From then on, every completed turn logs one line to `~/.claude/water-log.jsonl`.
+
+### Windows
+
+The installer and the Stop hook are Bash scripts, so run them from a Bash shell — not PowerShell or `cmd`:
+
+- **WSL (recommended).** Inside your WSL distro, Claude Code and `~/.claude` live in the Linux home, so the commands above work **exactly as written**. Install [Node.js inside WSL](https://nodejs.org) and run `bash install.sh` there.
+- **Git Bash.** [Git for Windows](https://git-scm.com/download/win) ships a Bash shell — run the same `bash install.sh` in it. The hook is registered as `bash ~/.claude/skills/water/hook.sh`, so `bash` must be on the PATH that Claude Code uses.
+
+Whichever you pick, run Claude Code from the **same** environment you installed into, so the hook and `~/.claude/water-log.jsonl` resolve to the same home directory. The dashboard (`index.html`) is just a static file — open it in any browser on any OS.
 
 ---
 
