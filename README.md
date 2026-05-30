@@ -1,18 +1,40 @@
+<div align="center">
+
 # thirstyLLM 💧
 
-**Track the water footprint of your Claude usage — locally, privately, with no API key.**
+### Track the water footprint of your Claude usage — locally, privately, with no API key.
 
-Every prompt you send to a large language model runs on hardware in a data centre that's cooled with water. thirstyLLM estimates how much, based on the methodology in Li et al. 2023, *["Making AI Less 'Thirsty'"](https://arxiv.org/abs/2304.03271)*.
+[![Live dashboard](https://img.shields.io/badge/live-dashboard-06b6d4?style=flat-square)](https://pentasir.github.io/thirsty-llm/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
+[![No API key](https://img.shields.io/badge/API_key-none-22c55e?style=flat-square)](#why-its-private-by-design)
+[![Network requests](https://img.shields.io/badge/network_requests-zero-22c55e?style=flat-square)](#why-its-private-by-design)
+[![Methodology](https://img.shields.io/badge/methodology-Li_et_al._2023-8b5cf6?style=flat-square)](https://arxiv.org/abs/2304.03271)
+
+**[Try the live dashboard →](https://pentasir.github.io/thirsty-llm/)**
+
+<img src="docs/dashboard-dark.png" alt="thirstyLLM dashboard showing water footprint breakdowns by day, model, project, and session" width="720">
+
+</div>
+
+Every prompt you send to a large language model runs on hardware in a data centre that's cooled with water. **thirstyLLM** estimates how much, based on the methodology in Li et al. 2023, *["Making AI Less 'Thirsty'"](https://arxiv.org/abs/2304.03271)*.
 
 It has two parts:
 
-1. A **Claude Code skill** that logs token usage per turn to a local file (`~/.claude/water-log.jsonl`) — no network, no API key, just file I/O.
-2. A **single-file dashboard** you open in your browser and drop that log onto — it renders your water footprint entirely client-side.
-
-**Live dashboard:** https://pentasir.github.io/thirsty-llm/ &nbsp;·&nbsp; or just open `index.html` locally.
+1. 🪝 A **Claude Code skill** that logs token usage per turn to a local file (`~/.claude/water-log.jsonl`) — no network, no API key, just file I/O.
+2. 📊 A **single-file dashboard** you open in your browser and drop that log onto — it renders your water footprint entirely client-side.
 
 > [!NOTE]
 > **Estimates carry ±50% uncertainty.** This is a directional tool — more tokens always means more water — not a precise meter. See [Methodology](#methodology). Independent open-source project; not affiliated with, endorsed by, or sponsored by Anthropic. "Claude" is a trademark of Anthropic.
+
+## Contents
+
+[Why it's private](#why-its-private-by-design) ·
+[Install](#install) ·
+[Use it](#use-it) ·
+[How it works](#how-it-works) ·
+[Methodology](#methodology) ·
+[How it was built](#how-it-was-built) ·
+[License](#license)
 
 ---
 
@@ -99,6 +121,16 @@ Water is derived from token counts through three steps. Full detail lives in [`s
 - The pricing proxy includes margin, so multipliers are `±factor-of-2`.
 - The empirical anchor was measured on GPT-3-class models; absolute magnitudes carry the ±50% band. Directional accuracy (Haiku < Sonnet < Opus) is preserved.
 - Anthropic doesn't disclose which data centres handle inference, which is the largest source of uncertainty.
+
+### Maintaining the pricing proxy
+
+Model multipliers are derived at calculation time from the output-token prices in `formula.json`, so they can't drift from a hardcoded value. They *can* go stale if Anthropic changes prices. Before each release:
+
+1. Re-check every price against [anthropic.com/pricing](https://www.anthropic.com/pricing).
+2. Update `model_pricing_per_mtok_output_usd` and bump its `_checked` date.
+3. Run `bash install.sh` to deploy, then `node ~/.claude/skills/water/lib/show.mjs --validate`. (Validate reads the installed `~/.claude/formula.json`, so deploy first.) It fails on structural errors (missing baseline, bad price, multiplier outside 0.01–10×) and warns if `_checked` is over 120 days old.
+
+The self-test validates *arithmetic and structure*, not whether prices are current — staleness is only catchable by a human, which is why step 1 is manual. (Four of six prices were once stale-but-plausible and the green check never noticed; see [BUILD-STORY.md](docs/BUILD-STORY.md).)
 
 ---
 

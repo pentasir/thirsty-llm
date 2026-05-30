@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
-import { calculateWater, validate as validateFormula } from './formula.mjs';
+import { calculateWater, validate as validateFormula, checkPricing } from './formula.mjs';
 
 const HOME     = process.env.HOME;
 const LOG_PATH = `${HOME}/.claude/water-log.jsonl`;
@@ -16,6 +16,16 @@ const args = process.argv.slice(2);
 if (args.includes('--validate')) {
   const r = validateFormula();
   console.log(`✓ Validation passed — expected ${r.expected}mL, got ${r.got}mL (${r.deviation_pct}% deviation)`);
+
+  // Pricing structure checks (errors fail, staleness only warns)
+  const { errors, warnings } = checkPricing();
+  for (const w of warnings) console.log(`⚠ ${w}`);
+  for (const e of errors)   console.log(`✗ ${e}`);
+  if (errors.length) {
+    console.log(`\nPricing structure check failed (${errors.length} error${errors.length > 1 ? 's' : ''}) — fix formula.json.`);
+    process.exit(1);
+  }
+  console.log(`✓ Pricing structure OK${warnings.length ? ` (${warnings.length} warning${warnings.length > 1 ? 's' : ''} above)` : ''}`);
   process.exit(0);
 }
 

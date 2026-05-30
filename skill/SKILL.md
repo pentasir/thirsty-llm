@@ -24,6 +24,11 @@ formatted for terminal output.
 ```bash
 node ~/.claude/skills/water/lib/show.mjs --validate
 ```
+Checks two things: (1) the 504 mL arithmetic anchor, and (2) the pricing
+structure — a missing/zero baseline, a non-numeric price, or a multiplier
+outside 0.01–10× (typo guard) fail with exit 1. It also *warns* if pricing
+was last verified over 120 days ago. Note: it cannot tell whether prices are
+*current* — that's a manual check against anthropic.com/pricing.
 
 **`/water methodology`** — explain how the calculation works:
 ```bash
