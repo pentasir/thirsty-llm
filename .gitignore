@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+
+# Full build case study — keep local for LinkedIn / portfolio
+docs/case-study/
+
+# Personal logs — never commit real usage data
+water-log.jsonl
+water-cursor.json
+water-log.err.jsonl
+*.bak
+
+# Node
+node_modules/

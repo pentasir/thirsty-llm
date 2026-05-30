@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:;">
+  <link rel="icon" href="data:,">
+  <title>Claude Water Footprint</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Apple Design Tokens ─────────────────────── */
+    :root {
+      --bg:        #f5f5f7;
+      --surface:   #ffffff;
+      --surface-2: #f5f5f7;
+      --line:      rgba(0,0,0,0.08);
+      --line-soft: rgba(0,0,0,0.05);
+
+      --ink:    #1d1d1f;
+      --ink-2:  #515154;
+      --muted:  #86868b;
+
+      /* One accent — teal, close to existing aqua */
+      --accent:      #0891b2;
+      --accent-soft: rgba(8,145,178,0.08);
+      --accent-hi:   #06b6d4;
+
+      /* System semantic colours */
+      --green:  #28cd41;
+      --amber:  #ff9f0a;
+
+      /* Aliases kept for JS-generated HTML compatibility */
+      --aqua:      var(--accent);
+      --aqua-hi:   var(--accent-hi);
+      --aqua-deep: #0e7490;
+      --aqua-soft: var(--accent-soft);
+      --mint:      #00c7be;
+      --mint-soft: rgba(0,199,190,0.07);
+      --amber-soft:rgba(255,159,10,0.07);
+      --blue:      var(--accent);
+      --blue-hi:   var(--accent-hi);
+      --blue-soft: var(--accent-soft);
+      --teal:      var(--accent);
+      --red:       var(--amber);
+      --purple:    #0e7490;
+
+      --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.05);
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.04);
+
+      --r:    20px;
+      --r-sm: 14px;
+      --mono: 'SF Mono', ui-monospace, 'Cascadia Code', 'Menlo', monospace;
+      --sans: -apple-system, 'SF Pro Display', BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+    }
+
+    :root[data-theme="dark"] {
+      --bg:        #000000;
+      --surface:   #1c1c1e;
+      --surface-2: #2c2c2e;
+      --line:      rgba(255,255,255,0.09);
+      --line-soft: rgba(255,255,255,0.05);
+
+      --ink:    #f5f5f7;
+      --ink-2:  #a1a1a6;
+      --muted:  #6e6e73;
+
+      --accent:      #2dd4bf;
+      --accent-soft: rgba(45,212,191,0.10);
+      --accent-hi:   #5eead4;
+
+      --green:  #30d158;
+      --amber:  #ffd60a;
+
+      --aqua:      var(--accent);
+      --aqua-hi:   var(--accent-hi);
+      --aqua-deep: var(--accent-hi);
+      --aqua-soft: var(--accent-soft);
+      --mint:      #63e6be;
+      --mint-soft: rgba(99,230,190,0.08);
+      --amber-soft:rgba(255,214,10,0.08);
+      --blue:      var(--accent);
+      --blue-hi:   var(--accent-hi);
+      --blue-soft: var(--accent-soft);
+      --teal:      var(--accent);
+      --red:       var(--amber);
+      --purple:    var(--accent-hi);
+
+      --shadow:    0 2px 8px rgba(0,0,0,0.5), 0 8px 32px rgba(0,0,0,0.4);
+      --shadow-sm: 0 1px 4px rgba(0,0,0,0.4), 0 2px 12px rgba(0,0,0,0.3);
+    }
+
+    /* ── Base ────────────────────────────────────── */
+    html { font-family: var(--sans); }
+    body {
+      color: var(--ink-2);
+      min-height: 100vh;
+      padding: 56px 24px 80px;
+      line-height: 1.5;
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    .card, .chip, .cmp-box, #methodology, #dropzone, .file-tag, .badge, .mark {
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .stat-main, .hbig, .chip-v, .cmp-v, .model-pct, .model-meta, .hm-v,
+    .week-total, .chip-r, .range-ends, .delta, .ft-meta, .sess-water-v, .sess-metric-v {
+      font-variant-numeric: tabular-nums;
+    }
+    #app { max-width: 1080px; margin: 0 auto; }
+
+    /* ── Header ──────────────────────────────────── */
+    header { display: flex; align-items: center; gap: 14px; margin-bottom: 40px; flex-wrap: wrap; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .mark {
+      width: 38px; height: 38px; flex: none;
+      display: grid; place-items: center; border-radius: 10px;
+      background: var(--accent);
+    }
+    .mark svg { width: 21px; height: 21px; display: block; }
+    h1 { font-size: 1.15rem; font-weight: 600; letter-spacing: -0.3px; color: var(--ink); line-height: 1.1; }
+    .brand-eyebrow { font-size: 0.62rem; font-weight: 500; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 2px; }
+    .badge {
+      font-size: 0.67rem; font-family: var(--mono); color: var(--accent);
+      background: var(--accent-soft); border: 1px solid rgba(8,145,178,0.18);
+      border-radius: 6px; padding: 3px 9px; white-space: nowrap;
+    }
+    :root[data-theme="dark"] .badge { border-color: rgba(45,212,191,0.2); }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .file-tag {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: 10px; padding: 7px 10px 7px 14px;
+      box-shadow: var(--shadow-sm);
+    }
+    .file-tag .ft-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); flex: none; }
+    .file-tag .ft-name { font-size: 0.8rem; color: var(--ink); font-weight: 600; }
+    .file-tag .ft-meta { font-size: 0.72rem; color: var(--muted); }
+    .file-tag .ft-warn { color: var(--amber); }
+    .ft-change {
+      background: var(--surface-2); color: var(--ink-2);
+      border: 1px solid var(--line); border-radius: 7px;
+      padding: 5px 11px; font-size: 0.75rem; font-family: var(--sans); font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .ft-change:hover { background: var(--line); }
+    .ft-change input { display: none; }
+    .theme-toggle {
+      width: 34px; height: 34px; flex: none; display: grid; place-items: center;
+      border-radius: 50%; cursor: pointer;
+      background: var(--surface); border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm); color: var(--ink-2);
+      transition: background 0.2s, transform 0.1s;
+    }
+    .theme-toggle:hover { background: var(--surface-2); }
+    .theme-toggle:active { transform: scale(0.93); }
+    .theme-toggle svg { width: 17px; height: 17px; display: block; }
+    .theme-toggle .moon { display: none; }
+    :root[data-theme="dark"] .theme-toggle .sun { display: none; }
+    :root[data-theme="dark"] .theme-toggle .moon { display: block; }
+
+    /* ── Dropzone ────────────────────────────────── */
+    #dropzone {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 64px 24px; text-align: center;
+      margin-bottom: 24px; box-shadow: var(--shadow-sm);
+      transition: border-color 0.15s, background 0.15s;
+    }
+    #dropzone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
+    .dz-icon { width: 44px; height: 44px; margin: 0 auto 20px; display: block; }
+    .dz-title { font-size: 1rem; color: var(--ink); font-weight: 600; margin-bottom: 6px; letter-spacing: -0.15px; }
+    .dz-title code { font-family: var(--mono); font-size: 0.88rem; background: var(--surface-2); border: 1px solid var(--line); padding: 1px 7px; border-radius: 5px; color: var(--accent); }
+    .dz-sub { font-size: 0.86rem; color: var(--muted); margin-bottom: 22px; }
+    .btn-browse {
+      display: inline-block; background: var(--accent); color: #fff;
+      border: none; border-radius: 8px; padding: 10px 22px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer; font-family: inherit;
+      letter-spacing: -0.1px; transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-browse:hover { opacity: 0.88; }
+    .btn-browse:active { transform: scale(0.97); }
+    #file-input { display: none; }
+    .dz-privacy { font-size: 0.75rem; color: var(--muted); margin-top: 18px; }
+    .dz-privacy strong { color: var(--green); font-weight: 600; }
+
+    /* ── Grid ────────────────────────────────────── */
+    #stats { display: grid; gap: 14px; }
+    .row { display: grid; gap: 14px; }
+    .row-hero  { grid-template-columns: 320px 1fr; }
+    .row-chips { grid-template-columns: repeat(4, 1fr); }
+    .row-split { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 820px) {
+      .row-hero, .row-split { grid-template-columns: 1fr; }
+      .row-chips { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 460px) { .row-chips { grid-template-columns: 1fr; } }
+
+    /* ── Card ────────────────────────────────────── */
+    .card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); padding: 24px 26px;
+      box-shadow: var(--shadow);
+    }
+    .card-label {
+      font-size: 0.66rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 4px;
+    }
+    .card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 12px; margin-bottom: 18px;
+    }
+    .card-head .ttl { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+    .card-head .sub { font-size: 0.74rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── Hero — Today ────────────────────────────── */
+    .hero { display: flex; flex-direction: column; background: var(--surface); }
+    .hero .hlabel { font-size: 0.66rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .hero .hbig {
+      font-family: var(--sans); font-weight: 700; color: var(--ink);
+      font-size: 3.8rem; line-height: 1; letter-spacing: -2.5px; margin: 14px 0 0;
+    }
+    .hero .hunit { font-size: 1rem; color: var(--muted); font-weight: 400; }
+    .range-bar { margin: 18px 0 6px; }
+    .range-track {
+      height: 3px; border-radius: 2px; position: relative;
+      background: linear-gradient(90deg, var(--accent), var(--amber));
+      opacity: 0.4;
+    }
+    .range-mid {
+      position: absolute; top: 50%; width: 11px; height: 11px; border-radius: 50%;
+      background: var(--surface); border: 2px solid var(--accent);
+      transform: translate(-50%,-50%); box-shadow: 0 1px 4px rgba(0,0,0,0.16);
+    }
+    .range-ends { display: flex; justify-content: space-between; margin-top: 8px; font-family: var(--mono); font-size: 0.72rem; }
+    .range-ends .lo { color: var(--accent); }
+    .range-ends .hi { color: var(--amber); }
+    .range-ends .cap { color: var(--muted); font-family: var(--sans); font-size: 0.61rem; text-transform: uppercase; letter-spacing: 0.07em; display: block; margin-bottom: 1px; }
+    .hero-cmp { font-size: 0.88rem; color: var(--ink-2); margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+    .hero-cmp strong { color: var(--ink); font-weight: 600; }
+    .hero-metrics { display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+    .hm { flex: 1; min-width: 80px; }
+    .hm .hm-k { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+    .hm .hm-v { font-size: 0.95rem; color: var(--ink); font-weight: 600; }
+    .delta { display: inline-flex; align-items: center; gap: 3px; font-family: var(--mono); font-size: 0.68rem; font-weight: 600; margin-top: 4px; }
+    .delta-up   { color: var(--amber); }
+    .delta-down { color: var(--green); }
+    .delta-flat, .delta-new { color: var(--muted); }
+    .hero-empty, .stat-empty { font-size: 2.5rem; color: var(--line-soft); line-height: 1; }
+    .empty-note { font-size: 0.84rem; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+
+    /* ── Chart ───────────────────────────────────── */
+    .chart-card svg { width: 100%; height: auto; display: block; }
+    .week-total { font-size: 0.95rem; color: var(--ink); font-weight: 600; }
+    .chart-legend { display: flex; gap: 16px; margin: 2px 0 10px; flex-wrap: wrap; }
+    .lg { display: inline-flex; align-items: center; gap: 7px; font-size: 0.73rem; color: var(--ink-2); }
+    .lg-swatch { flex: none; border-radius: 2px; }
+    .lg-line .lg-swatch { width: 16px; height: 2px; background: var(--accent); border-radius: 1px; }
+    .lg-band .lg-swatch {
+      width: 16px; height: 9px; border-radius: 3px;
+      background: var(--accent-soft); border: 1px solid rgba(8,145,178,0.2);
+    }
+    :root[data-theme="dark"] .lg-band .lg-swatch { border-color: rgba(45,212,191,0.2); }
+    .lg b { color: var(--ink); font-weight: 600; }
+
+    /* ── Chips — Lifetime ────────────────────────── */
+    .chip {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-sm); padding: 20px 20px 18px;
+      box-shadow: var(--shadow-sm); display: flex; flex-direction: column; min-height: 110px;
+    }
+    .chip .chip-k { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .chip .chip-v { font-family: var(--sans); font-size: 1.7rem; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -0.5px; }
+    .chip .chip-r { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: auto; padding-top: 10px; }
+    .chip .chip-r .lo { color: var(--accent); }
+    .chip .chip-r .hi { color: var(--amber); }
+
+    /* ── Latest Session ──────────────────────────── */
+    /* ── Latest Session ──────────────────────────── */
+    .sess-latest-card {
+      display: grid;
+      grid-template-columns: 160px 1fr auto;
+      grid-template-areas: "left meta id";
+      column-gap: 0;
+      align-items: center;
+    }
+    .sess-latest-left {
+      grid-area: left;
+      padding-right: 24px;
+      border-right: 1px solid var(--line);
+    }
+    .sess-latest-left .slabel { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .sess-latest-left .swater { font-family: var(--sans); font-size: 2.1rem; font-weight: 700; color: var(--ink); letter-spacing: -1px; line-height: 1; margin-bottom: 2px; }
+    .sess-latest-meta {
+      grid-area: meta;
+      display: flex;
+      gap: 0;
+      align-items: flex-start;
+      padding: 0 24px;
+    }
+    .sess-latest-meta .hm {
+      flex: 1; min-width: 0;
+      padding-right: 20px; margin-right: 20px;
+      border-right: 1px solid var(--line-soft);
+    }
+    .sess-latest-meta .hm:last-child { border-right: none; margin-right: 0; padding-right: 0; }
+    .sess-latest-id {
+      grid-area: id;
+      text-align: right;
+      padding-left: 24px;
+      border-left: 1px solid var(--line);
+      margin-left: 0;
+    }
+    .sess-latest-id .sid-date { font-size: 0.82rem; color: var(--ink); font-weight: 600; }
+    .sess-latest-id .sid-hash { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+    @media (max-width: 640px) {
+      .sess-latest-card { grid-template-columns: 1fr; grid-template-areas: "left" "meta" "id"; }
+      .sess-latest-left { border-right: none; padding-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; margin-bottom: 14px; }
+      .sess-latest-id { border-left: none; padding-left: 0; text-align: left; border-top: 1px solid var(--line); padding-top: 14px; margin-top: 14px; }
+      .sess-latest-meta { padding: 0; }
+      .sess-latest-meta .hm { padding-right: 12px; margin-right: 12px; }
+    }
+
+    /* ── By Session ──────────────────────────────── */
+    .sess-table { display: flex; flex-direction: column; gap: 5px; }
+    .sess-row {
+      display: grid;
+      grid-template-columns: 100px 100px 1fr 100px 100px 70px;
+      gap: 10px 16px; align-items: center;
+      padding: 11px 14px; border-radius: 10px;
+      background: var(--surface-2); border: 1px solid var(--line-soft);
+      font-size: 0.79rem; color: var(--ink-2);
+    }
+    .sess-row.is-latest { background: var(--accent-soft); border-color: rgba(8,145,178,0.14); }
+    :root[data-theme="dark"] .sess-row.is-latest { border-color: rgba(45,212,191,0.14); }
+    .sess-row-header {
+      display: grid;
+      grid-template-columns: 100px 100px 1fr 100px 100px 70px;
+      gap: 10px 16px; padding: 0 14px 8px;
+      border-bottom: 1px solid var(--line); margin-bottom: 4px;
+      font-size: 0.63rem; font-weight: 600; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .sess-badge {
+      display: inline-block; font-size: 0.56rem; font-weight: 700; letter-spacing: 0.05em;
+      text-transform: uppercase; background: var(--accent); color: #fff;
+      border-radius: 4px; padding: 2px 6px; margin-right: 5px; vertical-align: middle;
+    }
+    .sess-hash { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); }
+    .sess-project { font-family: var(--mono); font-size: 0.76rem; }
+    .sess-water-v { font-weight: 600; color: var(--ink); font-size: 0.82rem; }
+    .sess-water-r { font-family: var(--mono); font-size: 0; } /* font-size:0 collapses the orphaned – text node */
+    .sess-water-r .lo,
+    .sess-water-r .hi { display: block; font-size: 0.62rem; }
+    .sess-water-r .lo { color: var(--accent); }
+    .sess-water-r .lo::before { content: 'Low  '; font-size: 0.85em; color: var(--muted); }
+    .sess-water-r .hi { color: var(--amber); }
+    .sess-water-r .hi::before { content: 'High '; font-size: 0.85em; color: var(--muted); }
+    .sess-metric-v { font-family: var(--mono); font-size: 0.78rem; }
+    @media (max-width: 680px) {
+      .sess-row, .sess-row-header { grid-template-columns: 1fr 1fr; }
+      .sess-row-header { display: none; }
+    }
+
+    /* ── Pie / Model / Project ───────────────────── */
+    .model-row { margin-bottom: 13px; }
+    .model-row:last-child { margin-bottom: 0; }
+    .model-head { display: flex; align-items: baseline; gap: 6px; margin-bottom: 3px; }
+    .model-name { font-size: 0.84rem; font-weight: 500; color: var(--ink); display: flex; align-items: center; gap: 7px; }
+    .model-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+    .model-pct { font-family: var(--mono); font-size: 0.8rem; color: var(--ink); font-weight: 600; }
+    .model-track { height: 3px; background: var(--surface-2); border-radius: 2px; overflow: hidden; }
+    .model-fill { height: 100%; border-radius: 2px; transition: width 0.5s cubic-bezier(.4,0,.2,1); }
+    .model-meta { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); margin-top: 3px; }
+
+    /* ── Comparison ──────────────────────────────── */
+    .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 460px) { .cmp-grid { grid-template-columns: 1fr; } }
+    .cmp-box { background: var(--surface-2); border: 1px solid var(--line-soft); border-radius: var(--r-sm); padding: 18px; text-align: center; }
+    .cmp-ico { height: 36px; display: flex; align-items: flex-end; justify-content: center; gap: 4px; margin-bottom: 10px; }
+    .cmp-ico svg { display: block; }
+    .cmp-v { font-family: var(--sans); font-size: 1.75rem; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -0.5px; }
+    .cmp-k { font-size: 0.75rem; color: var(--ink-2); margin-top: 5px; font-weight: 500; }
+    .cmp-r { font-family: var(--mono); font-size: 0.67rem; color: var(--muted); margin-top: 5px; }
+    .cmp-r .lo { color: var(--accent); }
+    .cmp-r .hi { color: var(--amber); }
+    .cmp-note { font-size: 0.71rem; color: var(--muted); text-align: center; margin-top: 12px; }
+    .cmp-note code { font-family: var(--mono); color: var(--ink-2); }
+
+    /* ── Methodology ─────────────────────────────── */
+    #methodology {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r); margin-top: 14px; overflow: hidden; box-shadow: var(--shadow-sm);
+    }
+    #methodology > summary {
+      padding: 15px 24px; cursor: pointer; font-size: 0.87rem; color: var(--ink-2); font-weight: 500;
+      list-style: none; user-select: none; display: flex; align-items: center; gap: 9px;
+    }
+    #methodology > summary::-webkit-details-marker { display: none; }
+    #methodology > summary::before { content: '▸'; color: var(--accent); transition: transform 0.18s; display: inline-block; }
+    #methodology[open] > summary::before { transform: rotate(90deg); }
+    #methodology > summary:hover { color: var(--ink); }
+    #methodology[open] > summary { border-bottom: 1px solid var(--line); }
+    .meth-body { padding: 24px 28px; font-size: 0.84rem; line-height: 1.75; }
+    .meth-body h3 { font-size: 0.82rem; color: var(--accent); font-weight: 600; margin: 22px 0 6px; }
+    .meth-body h3:first-child { margin-top: 0; }
+    .meth-body p { color: var(--ink-2); margin-bottom: 8px; }
+    .meth-body code { font-family: var(--mono); background: var(--surface-2); padding: 1px 5px; border-radius: 4px; font-size: 0.81em; border: 1px solid var(--line); }
+    .meth-body table { width: 100%; border-collapse: collapse; margin: 10px 0 14px; font-size: 0.81rem; }
+    .meth-body th { color: var(--muted); text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--line); font-weight: 600; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+    .meth-body td { padding: 8px 10px; color: var(--ink-2); border-bottom: 1px solid var(--line-soft); }
+    .meth-body td:not(:first-child) { font-family: var(--mono); }
+    .formula-block {
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: 10px; padding: 14px 16px;
+      font-family: var(--mono); font-size: 0.78rem; color: var(--ink);
+      margin: 10px 0; white-space: pre; overflow-x: auto;
+    }
+
+    /* ── Footer ──────────────────────────────────── */
+    footer { text-align: center; font-size: 0.76rem; color: var(--muted); margin-top: 28px; }
+    footer .priv { color: var(--green); font-weight: 600; }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <path d="M12 2.5C12 2.5 19 10.2 19 15.2A7 7 0 0 1 5 15.2C5 10.2 12 2.5 12 2.5Z" fill="rgba(255,255,255,0.94)"/>
+          <path d="M9 14.4a3 3 0 0 0 2.1 2.6" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </span>
+      <div>
+        <div class="brand-eyebrow">Estimated · Li et al. 2023</div>
+        <h1>Claude Water Footprint</h1>
+      </div>
+    </div>
+    <span class="badge">Formula v1.2 · Li et al. 2023 · ±50%</span>
+    <div class="header-right">
+      <div id="file-tag"></div>
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+        </svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21 12.8A8.5 8.5 0 1 1 11.2 3a6.6 6.6 0 0 0 9.8 9.8Z"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <div id="dropzone">
+    <svg class="dz-icon" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+      <path d="M22 5C22 5 35 19 35 28A13 13 0 0 1 9 28C9 19 22 5 22 5Z" fill="var(--accent)" opacity="0.12"/>
+      <path d="M22 5C22 5 35 19 35 28A13 13 0 0 1 9 28C9 19 22 5 22 5Z" stroke="var(--accent)" stroke-width="1.4" stroke-linejoin="round"/>
+      <path d="M17 27a5 5 0 0 0 3.6 4" stroke="var(--accent)" stroke-width="1.4" stroke-linecap="round"/>
+    </svg>
+    <div class="dz-title">Drop <code>~/.claude/water-log.jsonl</code> here</div>
+    <div class="dz-sub">or browse to select the file</div>
+    <label class="btn-browse">
+      Browse file
+      <input type="file" id="file-input" accept=".jsonl,.json">
+    </label>
+    <div class="dz-privacy">
+      <strong>Zero network requests</strong> · No storage · Works fully offline · Close tab to clear data
+    </div>
+  </div>
+
+  <div id="stats" hidden></div>
+
+  <details id="methodology">
+    <summary>How we calculate — Li et al. 2023 · arXiv:2304.03271</summary>
+    <div class="meth-body">
+      <h3>Formula chain</h3>
+      <p>Water flows through: effective token count → model multiplier → water rate (low / mid / high). All three scenarios are always reported — never just one number.</p>
+      <div class="formula-block">effective_tokens =
+  (output_tokens          × 1.000)  // autoregressive decode — formula baseline
++ (fresh_input_tokens    × 0.200)  // pricing proxy: $3 / $15 MTok
++ (cache_creation_tokens × 0.250)  // pricing proxy: $3.75 / $15 MTok
++ (cache_read_tokens     × 0.001)  // floor value — see note below
+
+scaled_tokens = effective_tokens × model_multiplier
+water_mL      = scaled_tokens × rate   // three scenarios</div>
+
+      <h3>Water rates (mL / effective token)</h3>
+      <table>
+        <tr><th>Scenario</th><th>Rate</th><th>WUE</th><th>Basis</th></tr>
+        <tr><td>Low (optimistic)</td><td>0.0014</td><td>0.18 L/kWh</td><td>AWS modern, cool climate</td></tr>
+        <tr><td>Mid (central) ✶</td><td>0.014</td><td>1.8 L/kWh</td><td>Li et al. 2023 US average</td></tr>
+        <tr><td>High (pessimistic)</td><td>0.031</td><td>4.0 L/kWh</td><td>Hot climate, older facility</td></tr>
+      </table>
+      <p>✶ Charts and main values show mid. The low–high band reflects WUE uncertainty across different data centre locations. Anthropic does not disclose which AWS regions handle inference.</p>
+
+      <h3>Model multipliers (pricing-derived, verified 2026-05-30)</h3>
+      <table>
+        <tr><th>Model</th><th>Output price</th><th>Multiplier</th></tr>
+        <tr><td>Haiku 4.5</td><td>$5/MTok</td><td>0.33×</td></tr>
+        <tr><td>Sonnet 4.5</td><td>$15/MTok</td><td>1.00×</td></tr>
+        <tr><td>Sonnet 4.6 (baseline)</td><td>$15/MTok</td><td>1.00×</td></tr>
+        <tr><td>Opus 4.5–4.8</td><td>$25/MTok</td><td>1.67×</td></tr>
+      </table>
+      <p>Multipliers are derived at calculation time as <code>model output price ÷ baseline ($15)</code>. Pricing includes margin, so treat multipliers as ±factor-of-2. Verified against the live Anthropic pricing page on 2026-05-30. The mid rate is anchored to Li et al. (GPT-3 era); directional accuracy (Haiku &lt; Sonnet &lt; Opus) holds, and absolute magnitudes carry the ±50% uncertainty.</p>
+
+      <h3>Empirical anchor</h3>
+      <p>Li et al. 2023: ChatGPT consumes ~500 mL per 20–50 simple conversations in the US.<br>
+         Reverse: 500 mL ÷ 30 conversations ÷ 1,200 tokens/conversation = <strong>0.014 mL/token</strong> (mid rate).</p>
+
+      <h3>Note on cache_read weight (0.001×)</h3>
+      <p>The pricing proxy gives ~0.02× ($0.30/$15 MTok). At that weight, cache reads dominate long-context Claude Code sessions — 8.7 M cache tokens produce 2.4 L, contradicting the 500 mL / 30-conversation anchor. The 0.001 floor prevents dominance while acknowledging that some compute is involved. A v2 formula will introduce a <code>cache_size × output_tokens</code> cross-term. The deviation from the pricing proxy is documented in formula.json and absorbed by the ±50% accuracy band.</p>
+
+      <h3>Verify security</h3>
+      <p>Open DevTools → Network tab → drop your log file → confirm zero requests appear. The page uses no browser storage APIs, no analytics endpoints, and no external resources — view source to verify.</p>
+    </div>
+  </details>
+
+  <footer>
+    <p class="priv">⚑ Zero network requests · Stateless · Fully offline</p>
+    <p style="margin-top:4px">Source: Li et al. 2023, <a href="https://arxiv.org/abs/2304.03271">arXiv:2304.03271</a> · Formula v1.2 · Estimates ±50%</p>
+  </footer>
+
+</div>
+<script>
+// ============================================================
+// FORMULA CONSTANTS — inlined from ~/.claude/formula.json v1.2
+// Last synced from formula.json v1.2 on 2026-05-30 (pricing verified vs live Anthropic page)
+// Source: Li et al. 2023, arXiv:2304.03271
+// ============================================================
+const F = {
+  rates:   { low: 0.0014, mid: 0.014, high: 0.031 },
+  weights: { output: 1.000, input_fresh: 0.200, cache_creation: 0.250, cache_read: 0.001 },
+  pricing: {
+    'claude-haiku-4-5':           5.00,
+    'claude-haiku-4-5-20251001':  5.00,
+    'claude-sonnet-4-5':         15.00,
+    'claude-sonnet-4-6':         15.00,
+    'claude-opus-4-5':           25.00,
+    'claude-opus-4-6':           25.00,
+    'claude-opus-4-7':           25.00,
+    'claude-opus-4-8':           25.00,
+  },
+  baselinePrice: 15.00,
+};
+
+// ============================================================
+// CORE CALCULATION — mirrors formula.mjs calculateWater() exactly
+// ============================================================
+function calculateWater(entry) {
+  const modelPrice = F.pricing[entry.model] ?? F.baselinePrice;
+  const mult = modelPrice / F.baselinePrice;
+  const eff =
+    ((entry.out     || 0) * F.weights.output) +
+    ((entry.in      || 0) * F.weights.input_fresh) +
+    ((entry.cache_w || 0) * F.weights.cache_creation) +
+    ((entry.cache_r || 0) * F.weights.cache_read);
+  const s = eff * mult;
+  return { lo: s * F.rates.low, mid: s * F.rates.mid, hi: s * F.rates.high };
+}
+
+function sumEntries(entries) {
+  let lo = 0, mid = 0, hi = 0, turns = 0, tokens = 0;
+  for (const e of entries) {
+    const w = calculateWater(e);
+    lo += w.lo; mid += w.mid; hi += w.hi; turns++;
+    tokens += (e.in || 0) + (e.out || 0) + (e.cache_r || 0) + (e.cache_w || 0);
+  }
+  return { lo, mid, hi, turns, tokens };
+}
+
+// ============================================================
+// SECURITY — escape log-derived strings before innerHTML
+// ============================================================
+function esc(s) {
+  return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+}
+
+// ============================================================
+// FORMATTING
+// ============================================================
+function fmtMl(mL) {
+  if (mL === 0)  return '0 mL';
+  if (mL < 1)    return `${(mL * 1000).toFixed(0)} µL`;
+  if (mL < 1000) return `${mL.toFixed(1)} mL`;
+  return `${(mL / 1000).toFixed(2)} L`;
+}
+function fmtTok(n) {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(1)}B tokens`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(2)}M tokens`;
+  if (n >= 1e3) return `${Math.round(n / 1e3)}K tokens`;
+  return `${n} tokens`;
+}
+function comparison(mL) {
+  if (mL <= 0)   return '—';
+  if (mL < 5)    return 'less than a teaspoon';
+  if (mL < 15)   return `≈ ${(mL / 5).toFixed(1)} tsp`;
+  if (mL < 250)  return `≈ ${Math.round(mL / 237 * 100)}% of a cup`;
+  if (mL < 600)  return `≈ ${Math.round(mL / 500 * 100)}% of a 500 mL bottle`;
+  if (mL < 5000) return `≈ ${(mL / 500).toFixed(1)} water bottles`;
+  return `≈ ${(mL / 1000).toFixed(1)} L total`;
+}
+function fmtCount(n) {
+  if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+  if (n >= 100)  return Math.round(n).toLocaleString();
+  if (n >= 10)   return n.toFixed(0);
+  return n.toFixed(1);
+}
+function modelLabel(id) {
+  const m = {
+    'claude-haiku-4-5': 'Haiku 4.5', 'claude-haiku-4-5-20251001': 'Haiku 4.5',
+    'claude-sonnet-4-5': 'Sonnet 4.5', 'claude-sonnet-4-6': 'Sonnet 4.6',
+    'claude-opus-4-5': 'Opus 4.5', 'claude-opus-4-6': 'Opus 4.6',
+    'claude-opus-4-7': 'Opus 4.7', 'claude-opus-4-8': 'Opus 4.8',
+  };
+  return m[id] || id;
+}
+
+// ============================================================
+// THEME-AWARE COLORS
+// ============================================================
+function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+function chartPalette() {
+  return isDark()
+    ? { grid:'#22403f', axis:'#7ba09b', line:'#33cdd9', today:'#4ad9e4',
+        bandTop:'#33cdd9', bandBot:'#2fd29c', dotEmpty:'#0e2426', guide:'#4ad9e4' }
+    : { grid:'#dce7e5', axis:'#7a918e', line:'#0c97a3', today:'#0a818c',
+        bandTop:'#0c97a3', bandBot:'#2bbf8e', dotEmpty:'#ffffff', guide:'#0c97a3' };
+}
+function modelColor(label) {
+  const d = isDark();
+  if (/opus/i.test(label))   return d ? '#4ad9e4' : '#086571';
+  if (/sonnet/i.test(label)) return d ? '#2fb8c4' : '#0c97a3';
+  if (/haiku/i.test(label))  return d ? '#2a9182' : '#2bbf8e';
+  return d ? '#7ba09b' : '#7a918e';
+}
+function glyphColor(which) {
+  const d = isDark();
+  return which === 'cup' ? (d ? '#33cdd9' : '#0c97a3') : (d ? '#2fd29c' : '#2bbf8e');
+}
+
+// ============================================================
+// DATE HELPERS (local timezone — mirrors show.mjs)
+// ============================================================
+function localDateStr(ts) { return new Date(ts).toLocaleDateString('en-CA'); }
+const todayStr     = localDateStr(Date.now());
+const yesterdayStr = localDateStr(Date.now() - 86400000);
+function lastNDays(n) {
+  const days = [];
+  for (let i = n - 1; i >= 0; i--) days.push(localDateStr(Date.now() - i * 86400000));
+  return days;
+}
+
+// ============================================================
+// DELTA BADGE
+// ============================================================
+function deltaBadge(curr, prev, label) {
+  if (!prev || prev <= 0)
+    return curr > 0 ? `<span class="delta delta-new">— no baseline</span>` : `<span class="delta delta-flat">—</span>`;
+  const pct = (curr - prev) / prev * 100;
+  if (Math.abs(pct) < 0.5) return `<span class="delta delta-flat">≈ flat ${label}</span>`;
+  const up = pct > 0;
+  return `<span class="delta ${up ? 'delta-up' : 'delta-down'}">${up ? '▲' : '▼'} ${Math.abs(pct).toFixed(0)}% ${label}</span>`;
+}
+
+// ============================================================
+// RENDER — Today hero
+// ============================================================
+function heroToday(today, yest) {
+  if (today.turns === 0) {
+    return `<div class="card hero">
+      <div class="hlabel">Today · water used</div>
+      <div class="hero-empty" style="margin-top:16px">—</div>
+      <div class="empty-note">No usage logged today yet — see Lifetime below.</div>
+    </div>`;
+  }
+  const span   = Math.max(today.hi - today.lo, 1e-9);
+  const midPct = Math.min(100, Math.max(0, (today.mid - today.lo) / span * 100));
+  return `<div class="card hero">
+    <div class="hlabel">Today · water used</div>
+    <div class="hbig">${fmtMl(today.mid)}</div>
+    <div class="range-bar">
+      <div class="range-track"><span class="range-mid" style="left:${midPct.toFixed(1)}%"></span></div>
+      <div class="range-ends">
+        <span class="lo"><span class="cap">Low</span>${fmtMl(today.lo)}</span>
+        <span class="hi" style="text-align:right"><span class="cap">High</span>${fmtMl(today.hi)}</span>
+      </div>
+    </div>
+    <div class="hero-cmp">Roughly <strong>${comparison(today.mid).replace(/^≈\s*/,'')}</strong></div>
+    <div class="hero-metrics">
+      <div class="hm">
+        <div class="hm-k">Tokens today</div>
+        <div class="hm-v">${fmtTok(today.tokens).replace(' tokens','')}</div>
+        ${deltaBadge(today.tokens, yest.tokens, 'vs yest')}
+      </div>
+      <div class="hm">
+        <div class="hm-k">Water vs yest.</div>
+        <div class="hm-v">${fmtMl(yest.mid)}</div>
+        ${deltaBadge(today.mid, yest.mid, 'vs yest')}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER — Latest session card (NEW)
+// ============================================================
+function latestSessionCard(entries) {
+  const latestId = entries.at(-1)?.session;
+  if (!latestId) return '';
+  const sessE  = entries.filter(e => e.session === latestId);
+  const t      = sumEntries(sessE);
+  const project = esc(sessE.at(-1)?.project || '—');
+  const models  = [...new Set(sessE.map(e => esc(modelLabel(e.model))))].join(', ');
+  const lastTs  = new Date(sessE.at(-1)?.ts);
+  const dateStr = lastTs.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeStr = lastTs.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  const span    = Math.max(t.hi - t.lo, 1e-9);
+  const midPct  = Math.min(100, Math.max(0, (t.mid - t.lo) / span * 100));
+
+  return `<div class="card sess-latest-card">
+    <div class="sess-latest-left">
+      <div class="slabel">Latest session</div>
+      <div class="swater">${fmtMl(t.mid)}</div>
+      <div class="range-bar" style="max-width:240px">
+        <div class="range-track"><span class="range-mid" style="left:${midPct.toFixed(1)}%"></span></div>
+        <div class="range-ends">
+          <span class="lo"><span class="cap">Low</span>${fmtMl(t.lo)}</span>
+          <span class="hi" style="text-align:right"><span class="cap">High</span>${fmtMl(t.hi)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="sess-latest-meta">
+      <div class="hm"><div class="hm-k">Tokens</div><div class="hm-v">${fmtTok(t.tokens).replace(' tokens','')}</div></div>
+      <div class="hm"><div class="hm-k">Turns</div><div class="hm-v">${t.turns}</div></div>
+      <div class="hm"><div class="hm-k">Project</div><div class="hm-v" style="font-size:0.88rem">${project}</div></div>
+      <div class="hm"><div class="hm-k">Model</div><div class="hm-v" style="font-size:0.88rem">${models}</div></div>
+    </div>
+    <div class="sess-latest-id">
+      <div class="sid-date">${dateStr}</div>
+      <div class="sid-hash">${timeStr} · ${esc(latestId.slice(0, 8))}…</div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER — Lifetime chips (unchanged)
+// ============================================================
+function lifetimeChips(all) {
+  const eff   = all.tokens > 0 ? all.mid / all.tokens * 1000 : 0;
+  const effLo = all.tokens > 0 ? all.lo  / all.tokens * 1000 : 0;
+  const effHi = all.tokens > 0 ? all.hi  / all.tokens * 1000 : 0;
+  const na = `<span style="color:#b6c6c3">—</span>`;
+  const waterChip = all.turns === 0
+    ? `<div class="chip"><div class="chip-k">Total water</div><div class="chip-v">${na}</div></div>`
+    : `<div class="chip"><div class="chip-k">Total water</div><div class="chip-v">${fmtMl(all.mid)}</div>
+       <div class="chip-r"><span class="lo">${fmtMl(all.lo)}</span> – <span class="hi">${fmtMl(all.hi)}</span></div></div>`;
+  const effChip = all.turns === 0
+    ? `<div class="chip"><div class="chip-k">Efficiency</div><div class="chip-v">${na}</div></div>`
+    : `<div class="chip"><div class="chip-k">Efficiency</div><div class="chip-v">${fmtMl(eff)}</div>
+       <div class="chip-r">per 1k tok · <span class="lo">${fmtMl(effLo)}</span>–<span class="hi">${fmtMl(effHi)}</span></div></div>`;
+  return `${waterChip}
+    <div class="chip"><div class="chip-k">Total tokens</div>
+      <div class="chip-v">${all.turns === 0 ? na : fmtTok(all.tokens).replace(' tokens','')}</div>
+      <div class="chip-r">${all.turns === 0 ? 'no data' : 'cumulative'}</div></div>
+    ${effChip}
+    <div class="chip"><div class="chip-k">Total turns</div>
+      <div class="chip-v">${all.turns === 0 ? na : all.turns.toLocaleString()}</div>
+      <div class="chip-r">${all.turns === 0 ? 'no data' : 'logged'}</div></div>`;
+}
+
+// ============================================================
+// RENDER — 7-day SVG line chart
+// ============================================================
+function lineChart(entries) {
+  const days = lastNDays(7);
+  const buckets = {};
+  for (const d of days) buckets[d] = { lo: 0, mid: 0, hi: 0 };
+  for (const e of entries) {
+    const d = localDateStr(e.ts);
+    if (buckets[d]) { const w = calculateWater(e); buckets[d].lo += w.lo; buckets[d].mid += w.mid; buckets[d].hi += w.hi; }
+  }
+  const data   = days.map(d => ({ date: d, ...buckets[d] }));
+  const maxHi  = Math.max(...data.map(d => d.hi), 0.001);
+  const maxMid = Math.max(...data.map(d => d.mid), 0.0001);
+  const maxVal = maxHi;
+  const W = 560, H = 188, P = { t:14, r:16, b:28, l:60 };
+  const pw = W - P.l - P.r, ph = H - P.t - P.b, n = days.length;
+  const cx = i => P.l + (n < 2 ? pw/2 : (i/(n-1))*pw);
+  const cy = v => P.t + ph - (v/maxVal)*ph;
+  const hiPts  = data.map((d,i) => `${cx(i).toFixed(1)},${cy(d.hi).toFixed(1)}`);
+  const loPts  = data.slice().reverse().map((d,i) => `${cx(n-1-i).toFixed(1)},${cy(d.lo).toFixed(1)}`);
+  const bandD  = `M ${hiPts[0]} L ${hiPts.slice(1).join(' L ')} L ${loPts.join(' L ')} Z`;
+  const midD   = data.map((d,i) => `${i===0?'M':'L'} ${cx(i).toFixed(1)},${cy(d.mid).toFixed(1)}`).join(' ');
+  const C = chartPalette();
+  // Ticks anchored to actual data: 0 / peak-mid / peak-hi — labels are semantically honest
+  const yTicks = [
+    { v: 0,      tag: '' },
+    { v: maxMid, tag: ' mid' },
+    { v: maxHi,  tag: ' hi' },
+  ];
+  const gridLines = yTicks.map(({ v }) =>
+    `<line x1="${P.l}" y1="${cy(v).toFixed(1)}" x2="${W-P.r}" y2="${cy(v).toFixed(1)}" stroke="${C.grid}" stroke-width="1" ${v===0?'':'stroke-dasharray="4,5"'}/>`
+  ).join('');
+  const yLabels = yTicks.map(({ v, tag }) =>
+    `<text x="${P.l-8}" y="${(cy(v)+4).toFixed(1)}" text-anchor="end" fill="${C.axis}" font-size="10" font-family="-apple-system,system-ui,sans-serif">${fmtMl(v)}${tag}</text>`
+  ).join('');
+  const xLabels = data.map((d,i) => {
+    const isToday = d.date === todayStr;
+    const wd  = isToday ? 'Today' : new Date(d.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short'});
+    return `<text x="${cx(i).toFixed(1)}" y="${H-5}" text-anchor="middle" fill="${isToday?C.today:C.axis}" font-weight="${isToday?700:400}" font-size="11" font-family="-apple-system,system-ui,sans-serif">${wd}</text>`;
+  }).join('');
+  const todayIdx  = data.findIndex(d => d.date === todayStr);
+  const todayGuide = todayIdx >= 0
+    ? `<line x1="${cx(todayIdx).toFixed(1)}" y1="${P.t}" x2="${cx(todayIdx).toFixed(1)}" y2="${P.t+ph}" stroke="${C.guide}" stroke-width="1" stroke-dasharray="3,4" opacity="0.35"/>`
+    : '';
+  const hiEdge   = `M ${hiPts[0]} L ${hiPts.slice(1).join(' L ')}`;
+  const loEdgePts = data.map((d,i) => `${cx(i).toFixed(1)},${cy(d.lo).toFixed(1)}`);
+  const loEdge   = `M ${loEdgePts[0]} L ${loEdgePts.slice(1).join(' L ')}`;
+  const dots = data.map((d,i) => d.mid === 0 ? '' :
+    `<circle cx="${cx(i).toFixed(1)}" cy="${cy(d.mid).toFixed(1)}" r="${d.date===todayStr?5:4}" fill="${d.date===todayStr?C.line:C.dotEmpty}" stroke="${C.line}" stroke-width="2"/>`
+  ).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+  <defs><linearGradient id="bGrad" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${C.bandTop}" stop-opacity="${isDark()?0.28:0.20}"/>
+    <stop offset="100%" stop-color="${C.bandBot}" stop-opacity="0.02"/>
+  </linearGradient></defs>
+  ${gridLines}${todayGuide}
+  <path d="${bandD}" fill="url(#bGrad)" stroke="none"/>
+  <path d="${hiEdge}" fill="none" stroke="${C.bandTop}" stroke-width="1" stroke-dasharray="2,3" opacity="0.55" stroke-linecap="round"/>
+  <path d="${loEdge}" fill="none" stroke="${C.bandTop}" stroke-width="1" stroke-dasharray="2,3" opacity="0.4" stroke-linecap="round"/>
+  <path d="${midD}" fill="none" stroke="${C.line}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  ${dots}${xLabels}${yLabels}
+</svg>`;
+}
+
+// ============================================================
+// SHARED — Donut pie chart (SVG, no deps)
+// ============================================================
+function pieChart(segments) {
+  const W = 160, cx = 80, cy = 80, R = 68, ri = 40;
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  if (segments.length === 1) {
+    return `<svg viewBox="0 0 ${W} ${W}" width="${W}" height="${W}" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="${cx}" cy="${cy}" r="${R}" fill="${segments[0].color}" opacity="0.85"/>
+      <circle cx="${cx}" cy="${cy}" r="${ri}" fill="var(--surface)"/>
+    </svg>`;
+  }
+  let paths = '', angle = -Math.PI / 2;
+  for (const { value, color } of segments) {
+    const slice = (value / total) * Math.PI * 2;
+    if (slice < 0.005) continue;
+    const end = angle + slice, large = slice > Math.PI ? 1 : 0;
+    const x1 = cx + R  * Math.cos(angle), y1 = cy + R  * Math.sin(angle);
+    const x2 = cx + R  * Math.cos(end),   y2 = cy + R  * Math.sin(end);
+    const x3 = cx + ri * Math.cos(end),   y3 = cy + ri * Math.sin(end);
+    const x4 = cx + ri * Math.cos(angle), y4 = cy + ri * Math.sin(angle);
+    paths += `<path d="M${x1.toFixed(1)},${y1.toFixed(1)} A${R},${R} 0 ${large},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${x3.toFixed(1)},${y3.toFixed(1)} A${ri},${ri} 0 ${large},0 ${x4.toFixed(1)},${y4.toFixed(1)}Z" fill="${color}" opacity="0.85" stroke="var(--surface)" stroke-width="2.5"/>`;
+    angle = end;
+  }
+  return `<svg viewBox="0 0 ${W} ${W}" width="${W}" height="${W}" xmlns="http://www.w3.org/2000/svg">${paths}</svg>`;
+}
+
+// ============================================================
+// RENDER — Model pie
+// ============================================================
+function modelBars(entries) {
+  const totals = {};
+  for (const e of entries) {
+    const lbl = modelLabel(e.model);
+    if (!totals[lbl]) totals[lbl] = { mid:0, turns:0, tokens:0 };
+    const w = calculateWater(e);
+    totals[lbl].mid    += w.mid;
+    totals[lbl].turns  += 1;
+    totals[lbl].tokens += (e.in||0)+(e.out||0)+(e.cache_r||0)+(e.cache_w||0);
+  }
+  const rows     = Object.entries(totals).sort((a,b) => b[1].mid - a[1].mid);
+  const totalMid = rows.reduce((s,[,v]) => s + v.mid, 0) || 1;
+  if (rows.length === 0) return `<p style="color:var(--muted);font-size:0.85rem">No data</p>`;
+  const segments = rows.map(([lbl, v]) => ({ value: v.mid, color: modelColor(lbl) }));
+  const legend   = rows.map(([lbl, v]) => {
+    const pct = Math.round(v.mid / totalMid * 100);
+    const col = modelColor(lbl);
+    return `<div class="model-row">
+      <div class="model-head">
+        <span class="model-name"><span class="model-dot" style="background:${col}"></span>${lbl}</span>
+        <span class="model-pct">${pct}%</span>
+      </div>
+      <div class="model-meta">${fmtMl(v.mid)} · ${fmtTok(v.tokens)} · ${v.turns} turn${v.turns!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="flex:none">${pieChart(segments)}</div>
+    <div style="flex:1;min-width:140px">${legend}</div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER — By project bars
+// ============================================================
+function projectColor(idx) {
+  const d = isDark();
+  const p = d
+    ? ['#33cdd9','#2fd29c','#f0a35a','#4ad9e4','#a78bfa','#2fb8c4']
+    : ['#0c97a3','#2bbf8e','#d98b3f','#086571','#7c3aed','#0a818c'];
+  return p[idx % p.length];
+}
+function projectBars(entries) {
+  const totals = {};
+  for (const e of entries) {
+    const proj = e.project || '(none)';
+    if (!totals[proj]) totals[proj] = { mid: 0, turns: 0, tokens: 0 };
+    const w = calculateWater(e);
+    totals[proj].mid    += w.mid;
+    totals[proj].turns  += 1;
+    totals[proj].tokens += (e.in||0)+(e.out||0)+(e.cache_r||0)+(e.cache_w||0);
+  }
+  const rows     = Object.entries(totals).sort((a, b) => b[1].mid - a[1].mid);
+  const totalMid = rows.reduce((s, [, v]) => s + v.mid, 0) || 1;
+  if (rows.length === 0) return `<p style="color:var(--muted);font-size:0.85rem">No data</p>`;
+  const segments = rows.map(([, v], i) => ({ value: v.mid, color: projectColor(i) }));
+  const legend   = rows.map(([proj, v], i) => {
+    const pct = Math.round(v.mid / totalMid * 100);
+    const col = projectColor(i);
+    return `<div class="model-row">
+      <div class="model-head">
+        <span class="model-name"><span class="model-dot" style="background:${col}"></span>${esc(proj)}</span>
+        <span class="model-pct">${pct}%</span>
+      </div>
+      <div class="model-meta">${fmtMl(v.mid)} · ${fmtTok(v.tokens)} · ${v.turns} turn${v.turns!==1?'s':''}</div>
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+    <div style="flex:none">${pieChart(segments)}</div>
+    <div style="flex:1;min-width:140px">${legend}</div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER — By session breakdown (NEW)
+// ============================================================
+function sessionBreakdown(entries) {
+  // Group by session, preserving order of first appearance
+  const order = [], map = {};
+  for (const e of entries) {
+    if (!map[e.session]) { order.push(e.session); map[e.session] = []; }
+    map[e.session].push(e);
+  }
+  // Sort by most recent last-entry timestamp, descending
+  order.sort((a, b) => new Date(map[b].at(-1).ts) - new Date(map[a].at(-1).ts));
+
+  const latestId = entries.at(-1)?.session;
+  const rows = order.map(id => {
+    const se      = map[id];
+    const t       = sumEntries(se);
+    const projCounts = {};
+    for (const e of se) { const p = e.project || '—'; projCounts[p] = (projCounts[p] || 0) + 1; }
+    const projSorted = Object.entries(projCounts).sort((a, b) => b[1] - a[1]);
+    const project = esc(projSorted.length > 1
+      ? `${projSorted[0][0]} · +${projSorted.length - 1}`
+      : (projSorted[0]?.[0] || '—'));
+    const models  = [...new Set(se.map(e => esc(modelLabel(e.model))))].join(', ');
+    const lastTs  = new Date(se.at(-1)?.ts);
+    const dateStr = lastTs.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    const isLatest = id === latestId;
+    return `<div class="sess-row ${isLatest ? 'is-latest' : ''}">
+      <div>${isLatest ? '<span class="sess-badge">latest</span>' : ''}<span class="sess-hash">${esc(id.slice(0,8))}…</span></div>
+      <div style="color:var(--muted);font-size:0.78rem">${dateStr} · ${se.length} turn${se.length!==1?'s':''}</div>
+      <div class="sess-project">${project}</div>
+      <div style="font-size:0.78rem;color:var(--ink-2)">${models}</div>
+      <div>
+        <div class="sess-water-v">${fmtMl(t.mid)}</div>
+        <div class="sess-water-r"><span class="lo">${fmtMl(t.lo)}</span>–<span class="hi">${fmtMl(t.hi)}</span></div>
+      </div>
+      <div class="sess-metric-v">${fmtTok(t.tokens)}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="card">
+    <div class="card-head">
+      <div>
+        <div class="ttl">By session</div>
+        <div class="sub">Most recent first · all-time</div>
+      </div>
+      <div style="font-family:var(--mono);font-size:0.84rem;color:var(--muted)">${order.length} session${order.length!==1?'s':''}</div>
+    </div>
+    <div class="sess-row-header">
+      <div>Session</div>
+      <div>Date · turns</div>
+      <div>Project</div>
+      <div>Model</div>
+      <div>Water</div>
+      <div>Tokens</div>
+    </div>
+    <div class="sess-table">${rows}</div>
+  </div>`;
+}
+
+// ============================================================
+// RENDER — Comparison (cups + bottles)
+// ============================================================
+function cupGlyph(c) {
+  return `<svg width="22" height="30" viewBox="0 0 22 30" fill="none"><path d="M3 4h16l-1.6 22a2 2 0 0 1-2 1.9H6.6a2 2 0 0 1-2-1.9L3 4Z" fill="${c}" opacity="0.18"/><path d="M3 4h16l-1.6 22a2 2 0 0 1-2 1.9H6.6a2 2 0 0 1-2-1.9L3 4Z" stroke="${c}" stroke-width="1.6"/><rect x="5.2" y="15" width="11.6" height="11" rx="1" fill="${c}" opacity="0.55"/></svg>`;
+}
+function bottleGlyph(c) {
+  return `<svg width="18" height="32" viewBox="0 0 18 32" fill="none"><path d="M6.5 1.5h5V4c0 1 .4 1.4 1.2 2.2C14 7.6 14.5 9 14.5 11v17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 28V11c0-2 .5-3.4 1.8-4.8C6.1 5.4 6.5 5 6.5 4V1.5Z" fill="${c}" opacity="0.16"/><path d="M6.5 1.5h5V4c0 1 .4 1.4 1.2 2.2C14 7.6 14.5 9 14.5 11v17a2.5 2.5 0 0 1-2.5 2.5H6A2.5 2.5 0 0 1 3.5 28V11c0-2 .5-3.4 1.8-4.8C6.1 5.4 6.5 5 6.5 4V1.5Z" stroke="${c}" stroke-width="1.6"/><rect x="3.5" y="16" width="11" height="12" rx="1.4" fill="${c}" opacity="0.5"/></svg>`;
+}
+function comparisonCard(all) {
+  if (all.turns === 0) {
+    return `<div class="cmp-grid">
+      <div class="cmp-box"><div class="cmp-ico">${cupGlyph(glyphColor('cup'))}</div><div class="cmp-v" style="color:#b6c6c3">—</div><div class="cmp-k">Cups</div></div>
+      <div class="cmp-box"><div class="cmp-ico">${bottleGlyph(glyphColor('bottle'))}</div><div class="cmp-v" style="color:#b6c6c3">—</div><div class="cmp-k">Bottles</div></div>
+    </div>
+    <div class="cmp-note">Drop a log to see lifetime totals · <code>1 cup = 250 mL · 1 bottle = 500 mL</code></div>`;
+  }
+  const cups = all.mid/250, cupsLo = all.lo/250, cupsHi = all.hi/250;
+  const bot  = all.mid/500, botLo  = all.lo/500, botHi  = all.hi/500;
+  return `<div class="cmp-grid">
+    <div class="cmp-box">
+      <div class="cmp-ico">${cupGlyph(glyphColor('cup'))}</div>
+      <div class="cmp-v">${fmtCount(cups)}</div><div class="cmp-k">Cups of water</div>
+      <div class="cmp-r"><span class="lo">${fmtCount(cupsLo)}</span> – <span class="hi">${fmtCount(cupsHi)}</span></div>
+    </div>
+    <div class="cmp-box">
+      <div class="cmp-ico">${bottleGlyph(glyphColor('bottle'))}</div>
+      <div class="cmp-v">${fmtCount(bot)}</div><div class="cmp-k">500 mL bottles</div>
+      <div class="cmp-r"><span class="lo">${fmtCount(botLo)}</span> – <span class="hi">${fmtCount(botHi)}</span></div>
+    </div>
+  </div>
+  <div class="cmp-note"><code>1 cup = 250 mL · 1 bottle = 500 mL</code> · relatable layer only — mL/L above is the source of truth</div>`;
+}
+
+// ============================================================
+// RENDER — Full dashboard
+// ============================================================
+function renderStats(entries) {
+  lastEntries = entries;
+  const todayE   = entries.filter(e => localDateStr(e.ts) === todayStr);
+  const yestE    = entries.filter(e => localDateStr(e.ts) === yesterdayStr);
+  const allSum   = sumEntries(entries);
+  const todaySum = sumEntries(todayE);
+  const yestSum  = sumEntries(yestE);
+  const week7    = lastNDays(7);
+  const weekMid  = entries.filter(e => week7.includes(localDateStr(e.ts))).reduce((s,e) => s + calculateWater(e).mid, 0);
+
+  const el = document.getElementById('stats');
+  el.innerHTML = `
+    <div class="row row-hero">
+      ${heroToday(todaySum, yestSum)}
+      <div class="card chart-card">
+        <div class="card-head">
+          <div><div class="ttl">This week</div><div class="sub">Water per day · last 7 days</div></div>
+          <div style="text-align:right">
+            <div class="card-label" style="margin-bottom:2px">7-day total</div>
+            <div class="week-total">${fmtMl(weekMid)}</div>
+          </div>
+        </div>
+        <div class="chart-legend">
+          <span class="lg lg-line"><span class="lg-swatch"></span><b>Mid</b>&nbsp;estimate</span>
+          <span class="lg lg-band"><span class="lg-swatch"></span><b>Low–high</b>&nbsp;range (data-centre uncertainty)</span>
+        </div>
+        ${lineChart(entries)}
+      </div>
+    </div>
+
+    ${latestSessionCard(entries)}
+
+    <div class="card-label" style="margin:6px 2px 0">Lifetime totals</div>
+    <div class="row row-chips">${lifetimeChips(allSum)}</div>
+
+    <div class="row row-split">
+      <div class="card">
+        <div class="card-head"><div><div class="ttl">By model</div><div class="sub">Water share · sorted high → low</div></div></div>
+        ${modelBars(entries)}
+      </div>
+      <div class="card">
+        <div class="card-head"><div><div class="ttl">By project</div><div class="sub">Water share · sorted high → low</div></div></div>
+        ${projectBars(entries)}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div><div class="ttl">In everyday terms</div><div class="sub">Lifetime water, relatable comparison</div></div></div>
+      ${comparisonCard(allSum)}
+    </div>
+
+    ${sessionBreakdown(entries)}`;
+
+  el.hidden = false;
+  el.style.opacity = '0';
+  requestAnimationFrame(() => { el.style.transition = 'opacity 0.3s ease'; el.style.opacity = '1'; });
+}
+
+// ============================================================
+// FILE PARSING
+// ============================================================
+function parseLog(text) {
+  const lines = text.split('\n').filter(l => l.trim());
+  let skipped = 0;
+  const entries = [];
+  for (const l of lines) {
+    let obj;
+    try { obj = JSON.parse(l); } catch { skipped++; continue; }
+    if (obj && obj.v === 1 && typeof obj.ts === 'string' && typeof obj.out === 'number') {
+      entries.push(obj);
+    } else { skipped++; }
+  }
+  return { entries, skipped };
+}
+
+// ============================================================
+// FILE LOADING
+// ============================================================
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const { entries, skipped } = parseLog(ev.target.result);
+    if (entries.length === 0) {
+      alert('No valid v1 entries found.\nConfirm the file is ~/.claude/water-log.jsonl');
+      return;
+    }
+    renderStats(entries);
+    setFileTag(file.name, entries.length, skipped);
+    document.getElementById('dropzone').hidden = true;
+  };
+  reader.readAsText(file);
+}
+
+function setFileTag(name, count, skipped) {
+  const tag    = document.getElementById('file-tag');
+  const skipTxt = skipped > 0 ? ` · <span class="ft-warn">${skipped} skipped</span>` : '';
+  tag.className = 'file-tag';
+  tag.innerHTML = `
+    <span class="ft-dot"></span>
+    <div>
+      <div class="ft-name">${esc(name)}</div>
+      <div class="ft-meta">${count} turn${count!==1?'s':''} loaded${skipTxt}</div>
+    </div>
+    <label class="ft-change">Change<input type="file" id="file-input-reload" accept=".jsonl,.json"></label>`;
+  document.getElementById('file-input-reload').addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+}
+
+// ============================================================
+// EVENT LISTENERS
+// ============================================================
+let lastEntries = null;
+const dz = document.getElementById('dropzone');
+const fi = document.getElementById('file-input');
+
+document.getElementById('theme-toggle').addEventListener('click', () => {
+  const root = document.documentElement;
+  const dark = root.getAttribute('data-theme') === 'dark';
+  if (dark) root.removeAttribute('data-theme'); else root.setAttribute('data-theme', 'dark');
+  if (lastEntries) renderStats(lastEntries);
+});
+
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', e => { if (!dz.contains(e.relatedTarget)) dz.classList.remove('drag-over'); });
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fi.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+</script>
+</body>
+</html>

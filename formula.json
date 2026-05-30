@@ -1,0 +1,53 @@
+{
+  "version": "1.2",
+  "source": "Li et al. 2023, arXiv:2304.03271",
+  "notes": "Single source of truth for water calculation constants. Read by the Node skill at display-time and inlined into the static dashboard at build time. Never hardcode these values elsewhere. Bump version when any constant changes.",
+
+  "ml_per_effective_token": {
+    "low":  0.0014,
+    "mid":  0.014,
+    "high": 0.031,
+    "basis": "Empirical anchor from Li et al. 2023 Section 4.2, Table 3: ~500mL per 20-50 ChatGPT conversations (US data centres). Mid = 500mL / (30 conversations × 1200 tokens) = 0.0139 mL/token, rounded to 0.014. Low/high scaled by WUE ratio: low uses AWS modern WUE (0.18 L/kWh), high uses hot-climate max (4.0 L/kWh), vs central US average (1.8 L/kWh) used by Li et al.",
+    "calibration_note": "The 0.014 rate was derived from total token count treating all types equally. Token weights below adjust the relative cost of each type — they improve accuracy when the mix is known but are not independently calibrated against a second empirical dataset. This is part of the ±50% uncertainty budget."
+  },
+
+  "token_weights": {
+    "output":         { "weight": 1.00,  "basis": "Baseline. Anchored to Li et al. empirical figure (500mL / 30 conversations of ~1200 mostly-output tokens = 0.014 mL/token, treated as the 1.0x reference)." },
+    "input_fresh":    { "weight": 0.20,  "basis": "Pricing proxy: Anthropic Sonnet 4.6 input $3/MTok, output $15/MTok → 0.20×. Theoretical backing: parallelised prefill is single forward pass, cheaper than autoregressive decode (Dao et al. on FlashAttention; Pope et al. 2022 on efficient LLM serving discuss the prefill vs decode cost asymmetry)." },
+    "cache_creation": { "weight": 0.25,  "basis": "Pricing proxy: Anthropic cache write $3.75/MTok, output $15/MTok → 0.25×. Cache writes do a full forward pass and additionally persist KV state. Corrected from 0.20× in patch 2 — earlier value was carried over from input_fresh without re-checking the differing cache_write pricing." },
+    "cache_read":     { "weight": 0.001, "basis": "Deliberate empirical floor. Pricing proxy ($0.30/$15 MTok) would give 0.02×, but cache_read domination in long-context turns produced implausible totals (e.g. 6.6 L for one Claude Code turn under the original 0.03 weight). Floored at 0.001 to prevent dominance; the ±50% accuracy band absorbs the deviation from the pricing proxy. A v2 formula should replace this with a multiplicative cache_size × output_tokens interaction term." }
+  },
+
+  "model_pricing_per_mtok_output_usd": {
+    "claude-haiku-4-5":          5.00,
+    "claude-haiku-4-5-20251001": 5.00,
+    "claude-sonnet-4-5":         15.00,
+    "claude-sonnet-4-6":         15.00,
+    "claude-opus-4-5":           25.00,
+    "claude-opus-4-6":           25.00,
+    "claude-opus-4-7":           25.00,
+    "claude-opus-4-8":           25.00,
+    "default":                   15.00,
+    "_basis": "Anthropic public API output-token pricing as a compute proxy. Pricing includes margin and is not linear with true compute cost — treat resulting multipliers as ±factor-of-2. Multipliers are derived at calculation time (model price ÷ baseline price) so a pricing update cannot drift from a hardcoded multiplier.",
+    "_checked": "2026-05-30",
+    "_checked_source": "https://www.anthropic.com/pricing (verified directly)",
+    "_correction_note": "2026-05-30: All prices verified against the live Anthropic pricing page (independent second source). Corrected from the patch-2 snapshot, which used several stale/mismatched figures: Haiku 4.5 $0.80->$5 (the $0.80 was old Haiku-3.x pricing; multiplier 0.053x->0.333x — close to the pre-patch-2 0.3x, which was roughly right all along), Sonnet 4.5 $12->$15 (0.80x->1.00x), Opus 4.5 $60->$25 and Opus 4.7 $75->$25 (the $75 figure was actually Opus 4.1's price; multipliers 4-5x->1.667x). Added Opus 4.6 and 4.8 at $25. Lesson: every pricing-proxy value must be reconciled against the live page each release, not carried forward."
+  },
+  "baseline_model": "claude-sonnet-4-6",
+
+  "wue_reference": {
+    "aws_modern_low":   0.18,
+    "aws_modern_high":  0.35,
+    "us_average":       1.80,
+    "hot_climate_max":  4.00,
+    "used_for_mid":     1.80,
+    "source": "AWS 2022 Sustainability Report p.14 (low); Li et al. 2023 Section 3.2 (mid = US average assumption); ASHRAE Datacom Series Vol.2 (high). Anthropic has not disclosed which AWS regions handle inference as of 2026-05."
+  },
+
+  "validation": {
+    "test_input_effective_tokens": 36000,
+    "expected_mid_ml": 504,
+    "tolerance_pct": 10,
+    "basis": "Li et al.: 500mL per ~30 conversations × ~1200 tokens = 36000 tokens. Formula gives 504mL. NOTE: this validates arithmetic only — the anchor and the constant are derived from the same source. See methodology.md appendix for independent energy-chain cross-check and its uncertainty."
+  }
+}
