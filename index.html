@@ -291,7 +291,8 @@
       border-right: 1px solid var(--line);
     }
     .sess-latest-left .slabel { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
-    .sess-latest-left .swater { font-family: var(--sans); font-size: 2.1rem; font-weight: 700; color: var(--ink); letter-spacing: -1px; line-height: 1; margin-bottom: 2px; }
+    .sess-latest-left .swater { font-family: var(--sans); font-size: 2.1rem; font-weight: 700; color: var(--ink); letter-spacing: -1px; line-height: 1; margin-bottom: 2px; white-space: nowrap; }
+    .sess-latest-left .swater .sunit { font-size: 1.1rem; font-weight: 600; color: var(--muted); letter-spacing: 0; margin-left: 4px; }
     .sess-latest-meta {
       grid-area: meta;
       display: flex;
@@ -729,7 +730,7 @@ function latestSessionCard(entries) {
   return `<div class="card sess-latest-card">
     <div class="sess-latest-left">
       <div class="slabel">Latest session</div>
-      <div class="swater">${fmtMl(t.mid)}</div>
+      <div class="swater">${fmtMl(t.mid).replace(/ (µL|mL|L)$/, '<span class="sunit">$1</span>')}</div>
       <div class="range-bar" style="max-width:240px">
         <div class="range-track"><span class="range-mid" style="left:${midPct.toFixed(1)}%"></span></div>
         <div class="range-ends">
