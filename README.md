@@ -156,3 +156,7 @@ thirsty-llm/
 ## License
 
 [Apache License 2.0](LICENSE) © 2026 Jason K. Don
+
+## Note:
+
+I am not a technical person/coder - this was vibe coded because I was curious as to how much water is used per session (also why the whole thing is offline because I am not playing around with people's API keys or holding info on a website.
