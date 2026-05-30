@@ -1,8 +1,9 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
+import { homedir } from 'os';
 
-const HOME = process.env.HOME;
+const HOME = homedir();   // cross-platform: $HOME on Unix, %USERPROFILE% on Windows
 const FORMULA_PATH = `${HOME}/.claude/formula.json`;
 
 let _formula = null;

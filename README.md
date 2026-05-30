@@ -64,12 +64,17 @@ The installer copies the skill into `~/.claude/skills/water`, installs `formula.
 
 ### Windows
 
-The installer and the Stop hook are Bash scripts, so run them from a Bash shell — not PowerShell or `cmd`:
+Native Windows is supported — no WSL required. Use the PowerShell installer, which registers the Stop hook as a direct `node` command (no Bash involved):
 
-- **WSL (recommended).** Inside your WSL distro, Claude Code and `~/.claude` live in the Linux home, so the commands above work **exactly as written**. Install [Node.js inside WSL](https://nodejs.org) and run `bash install.sh` there.
-- **Git Bash.** [Git for Windows](https://git-scm.com/download/win) ships a Bash shell — run the same `bash install.sh` in it. The hook is registered as `bash ~/.claude/skills/water/hook.sh`, so `bash` must be on the PATH that Claude Code uses.
+```powershell
+git clone https://github.com/pentasir/thirsty-llm.git
+cd thirsty-llm
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
 
-Whichever you pick, run Claude Code from the **same** environment you installed into, so the hook and `~/.claude/water-log.jsonl` resolve to the same home directory. The dashboard (`index.html`) is just a static file — open it in any browser on any OS.
+It installs into `%USERPROFILE%\.claude` and logs to `%USERPROFILE%\.claude\water-log.jsonl`. View stats with `node "$env:USERPROFILE\.claude\skills\water\lib\show.mjs"`.
+
+Prefer a Unix-like shell? **WSL** or **Git Bash** also work — run `bash install.sh` there instead, exactly as on macOS/Linux. Whichever you choose, run Claude Code from the **same** environment you installed into so the hook and log resolve to the same home directory. The dashboard (`index.html`) is just a static file — open it in any browser on any OS.
 
 ---
 

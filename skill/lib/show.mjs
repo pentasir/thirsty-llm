@@ -6,9 +6,10 @@
  */
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
+import { homedir } from 'os';
 import { calculateWater, validate as validateFormula, checkPricing } from './formula.mjs';
 
-const HOME     = process.env.HOME;
+const HOME     = homedir();   // cross-platform: $HOME on Unix, %USERPROFILE% on Windows
 const LOG_PATH = `${HOME}/.claude/water-log.jsonl`;
 
 const args = process.argv.slice(2);

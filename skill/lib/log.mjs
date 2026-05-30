@@ -15,9 +15,10 @@
  */
 
 import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, chmodSync } from 'fs';
+import { homedir } from 'os';
 // No child_process — removed in patch-5 to eliminate shell-interpolation pattern.
 
-const HOME      = process.env.HOME;
+const HOME      = homedir();   // cross-platform: $HOME on Unix, %USERPROFILE% on Windows
 const LOG_PATH  = `${HOME}/.claude/water-log.jsonl`;
 const CUR_PATH  = `${HOME}/.claude/water-cursor.json`;
 const ERR_PATH  = `${HOME}/.claude/water-log.err.jsonl`;
@@ -105,7 +106,7 @@ async function run(payload) {
 
   const last    = newEntries[newEntries.length - 1];
   const model   = last.message.model ?? 'claude-sonnet-4-6';
-  const project = cwd.split('/').pop() ?? '';
+  const project = cwd.split(/[\\/]/).pop() ?? '';   // handle both / (Unix) and \ (Windows) separators
   // geo: empty string currently; preserved for future per-region WUE narrowing
   const geo     = last.message.usage?.inference_geo || null;
 

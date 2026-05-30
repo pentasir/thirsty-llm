@@ -5,7 +5,8 @@
 # to ~/.claude/water-log.jsonl. Errors are written to ~/.claude/water-log.err.
 # Never exits non-zero — must not interrupt Claude Code.
 #
-# Platform: Unix/macOS only. Windows users need WSL or a native hook.mjs variant.
+# Platform: Unix/macOS. On Windows, install.ps1 registers `node lib/log.mjs`
+# directly (no Bash wrapper needed) — this script is not used there.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ERR_LOG="$HOME/.claude/water-log.err"
