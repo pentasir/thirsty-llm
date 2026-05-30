@@ -1,7 +1,8 @@
 # Water Footprint Methodology
 
-**Version:** 1.2
-**Source:** Li et al. 2023, arXiv:2304.03271
+**Version:** 1.3
+**Primary source:** ML.ENERGY Leaderboard v3.0, Chung et al., NeurIPS 2025
+**Methodology framework:** Li et al. 2023, arXiv:2304.03271
 **Accuracy:** ±50% vs empirically measured values
 
 ---
@@ -63,16 +64,27 @@ scaled_tokens = effective_tokens × model_multiplier
 
 ### Step 3 — Water Rate
 
-We anchor to the Li et al. empirical figure and derive three scenarios:
+We anchor to the ML.ENERGY Leaderboard v3.0 empirical measurement and derive three scenarios:
 
 ```
 water_mL = scaled_tokens × rate
 
 Rate (mL per effective token):
-  Low  = 0.0014   (AWS modern data centre, cool climate, WUE ≈ 0.18 L/kWh)
-  Mid  = 0.014    (US average, WUE ≈ 1.8 L/kWh — Li et al. assumption)
-  High = 0.031    (hot climate, older facility, WUE ≈ 4.0 L/kWh)
+  Low  = 0.000036  (AWS modern data centre, cool climate, WUE ≈ 0.18 L/kWh)
+  Mid  = 0.00036   (US average, WUE ≈ 1.8 L/kWh — ML.ENERGY anchor)
+  High = 0.00079   (hot climate, older facility, WUE ≈ 4.0 L/kWh)
 ```
+
+**Derivation of the mid rate:**
+```
+Llama 3.1 70B FP8 on 8×H100 (ML.ENERGY v3.0):  0.39 J/token (GPU via NVML)
+Server overhead (GPU ≈ 55% of DGX H100 TDP):    × 1.82 = 0.71 J/token (IT load)
+Convert to kWh:                                  ÷ 3,600,000 = 1.97×10⁻⁷ kWh/token
+Apply US average WUE (1.8 L/kWh):               × 1800 mL/kWh = 0.000355 mL/token
+Rounded to:                                      0.00036 mL/token
+```
+
+Low and high are scaled by the same WUE ratios (0.18 and 4.0 L/kWh) used in v1.2.
 
 We always report all three. We never report a single number.
 
@@ -80,53 +92,39 @@ We always report all three. We never report a single number.
 
 ## Empirical Anchor
 
-**Li et al. key figure (Section 4.2, Table 3):** *"ChatGPT needs to 'drink' a 500mL bottle of water for a simple conversation of roughly 20–50 questions and answers in the US."*
+**v1.3 anchor — ML.ENERGY Leaderboard v3.0 (December 2025):**
 
-Working backwards:
+ML.ENERGY measures actual GPU power consumption during inference using NVML (NVIDIA Management Library). For Llama 3.1 70B FP8 running on 8×H100 GPUs with vLLM:
+
 ```
-500 mL ÷ 30 conversations (midpoint of 20–50) ÷ ~1,200 tokens/conversation
-= 0.014 mL per token (central rate)
+GPU energy per output token:   ~0.39 J/token
+Server overhead (×1.82):        0.71 J/token  (GPU ≈ 55% of DGX H100 TDP)
+At US average WUE (1.8 L/kWh): 0.00036 mL/token (mid rate)
 ```
+
+**Why Llama 70B as a Claude proxy:** Anthropic does not disclose Claude's architecture, parameter count, or energy use. Llama 3.1 70B is the closest publicly-measured model of plausible comparable scale. This introduces unknown but unquantifiable error; the ±50% uncertainty band is sized to absorb it.
 
 **Arithmetic check:**
 ```
-36,000 tokens × 0.014 mL/token = 504 mL ≈ 500 mL ✓ (within 1%)
+36,000 tokens × 0.00036 mL/token = 12.96 mL ≈ 13 mL ✓
 ```
+
+**Comparison with prior Li et al. anchor:**
+
+The v1.2 formula used Li et al. 2023's GPT-3 era figure of 0.014 mL/token. The lead author of that paper confirmed directly (2026-05-31) that those estimates should not be applied to modern models:
+
+> *"Our study was based on the information available as of 2023 and focused on a specific model, GPT-3-175B. Since then, AI inference systems have improved significantly, so I would not recommend directly applying those estimates to today's models. The water-footprint methodology from our paper still applies, but I would recommend using more updated data sources for energy estimates. One useful resource is the ML.ENERGY leaderboard."*
+> — Shaolei Ren (co-author, Li et al. 2023), email to Jason Don, 2026-05-31
+
+The v1.3 mid rate (0.00036 mL/token) is **~39× lower** than the prior anchor (0.014 mL/token). This reflects measured improvements in inference efficiency: better hardware (H100 vs A100-era), optimised serving engines (vLLM, TensorRT-LLM), FP8 quantisation, and MoE architectural improvements.
 
 **What this validates and what it does not:**
 
-This confirms the arithmetic is self-consistent. It does **not** independently validate the formula because the 0.014 constant was derived from the same 500 mL figure. Plugging it back in to recover ~500 mL is confirming arithmetic, not validating against independent data.
+The arithmetic check confirms self-consistency. It does not independently validate the formula because the 0.00036 constant and the test above are derived from the same ML.ENERGY figure. The ±50% band absorbs: Anthropic's actual hardware vs Llama 70B proxy, real-world batch size variation, regional WUE uncertainty, and the gap between ML.ENERGY's GPU-only measurement and full-stack power.
 
-**Independent cross-check via energy chain:**
+**Prior v1.2 energy-chain cross-check (retained for reference):**
 
-This approach derives water from first principles without using Li et al.'s empirical anchor:
-
-```
-Model size (claude-sonnet-4-6):      ~70B parameters (estimated)
-FLOPs per output token:              2 × 70×10⁹ = 1.4×10¹¹ FLOPs
-GPU (H100 SXM):                      ~1000 TFLOPS FP8 at 700W
-Decode utilisation (memory-bound):   ~25%
-Effective throughput per GPU:        250 TFLOPS
-
-Energy per output token:
-  = 1.4×10¹¹ FLOPs ÷ (250×10¹² FLOPs/s) × 700W
-  = 5.6×10⁻⁴ Wh/token
-
-With 4 GPUs (70B model requires tensor parallelism):
-  × 4 = 2.24×10⁻³ Wh/token
-
-With PUE 1.17 (AWS average):
-  = 2.62×10⁻³ Wh/token = 2.62×10⁻⁶ kWh/token
-
-Water at mid WUE (1.8 L/kWh):
-  = 2.62×10⁻⁶ × 1.8 × 1000 mL/L = 0.0047 mL/token
-```
-
-**Result: 0.0047 mL/token vs 0.014 mL/token from Li et al. — a 3× discrepancy.**
-
-This does not invalidate the empirical anchor. The energy-chain calculation carries large uncertainty in: model size (not disclosed), GPU count (not disclosed), actual GPU utilisation, cooling overhead, and whether water consumption vs withdrawal is counted. The 3× gap is within the combined uncertainty of both methods.
-
-**Conclusion:** We use Li et al.'s empirical figure as the primary anchor. The energy-chain serves as a rough sanity check — not a second independent validation. Both methods are directionally consistent (same order of magnitude). Neither resolves to better than ±50%.
+The v1.2 methodology.md contained an energy-chain estimate that gave 0.0047 mL/token — bracketing the Li et al. figure at 0.014 from below. That estimate was directionally consistent with the now-measured ML.ENERGY figure (0.00036–0.00079 range), though a factor of ~6–13× higher, likely because it assumed lower GPU utilisation and less optimised serving.
 
 ---
 
@@ -158,7 +156,7 @@ Water values are **not stored** in the log. They are derived on read from `formu
 
 ## Known Limitations
 
-- **Model equivalence is assumed:** Li et al. measured GPT-3/3.5-era models. We treat claude-sonnet-4-6 as a rough peer at 1.0×. Unverified.
+- **Model proxy is assumed:** ML.ENERGY measured Llama 3.1 70B FP8 on H100. We treat this as a reasonable Claude Sonnet-class proxy. Anthropic does not disclose Claude's architecture, parameter count, or energy use. Directional accuracy (Haiku < Sonnet < Opus) is preserved by pricing-derived multipliers; absolute magnitudes may differ.
 - **Token weights are partially cited:** The 5:1 output:input ratio is pricing-derived, not measured. Cache_read (0.001×) is a floor value to prevent long-context dominance — not independently measured. Both flagged for v1.2.
 - **Model multipliers are point estimates:** Opus 3.0× likely represents a range of 2–5×. Using a point value understates total uncertainty.
 - **Timezone handling:** Log entries are stored in UTC. "Today" and "this week" are computed in local time. Multi-day sessions that cross midnight may be split across days.
@@ -167,13 +165,14 @@ Water values are **not stored** in the log. They are derived on read from `formu
 
 ## Accuracy Claim
 
-> *"Estimates are accurate to within ±50% of empirically measured values, based on Li et al. 2023 (arXiv:2304.03271). The model is directionally correct — more tokens always means more water. Absolute values depend on which data centre handled your request, which Anthropic does not publicly disclose. We report a low/mid/high range rather than a single figure. The token weighting system improves accuracy when the token mix is known, but the weights themselves carry an additional ±factor-of-2 uncertainty."*
+> *"Estimates are anchored to ML.ENERGY Leaderboard v3.0 (Dec 2025) measured values for Llama 3.1 70B FP8 on H100 GPUs, applied to Claude via a model-size proxy. The model is directionally correct — more tokens always means more water. Absolute values depend on Anthropic's actual hardware, model architecture, and which data centre handled your request, none of which Anthropic publicly discloses. We report a low/mid/high range rather than a single figure. The prior Li et al. 2023 anchor (GPT-3 era) overestimated by ~39× on modern hardware; this v1.3 formula corrects for that. Residual uncertainty is ±50% or more."*
 
 ---
 
 ## References
 
-1. **Li, P., Yang, J., Islam, M.A., & Ren, S. (2023).** Making AI Less "Thirsty": Uncovering and Addressing the Secret Water Footprint of AI Models. *arXiv:2304.03271.*
-2. **AWS (2022).** AWS 2022 Sustainability Report. Amazon Web Services.
-3. **ASHRAE (2021).** Data Center Power and Cooling Best Practices.
-4. **Luccioni, A.S., Viguier, S., & Ligozat, A.L. (2023).** Estimating the Carbon Footprint of BLOOM. *Journal of Machine Learning Research.*
+1. **Chung, J., et al. (2025).** The ML.ENERGY Benchmark: Toward Automated Inference Energy Measurement and Optimization. *NeurIPS Datasets and Benchmarks 2025.* Data at https://ml.energy/leaderboard/
+2. **Li, P., Yang, J., Islam, M.A., & Ren, S. (2023).** Making AI Less "Thirsty": Uncovering and Addressing the Secret Water Footprint of AI Models. *arXiv:2304.03271.* (Methodology framework and WUE values; GPT-3 era empirical anchor superseded by ref 1 for modern models.)
+3. **AWS (2022).** AWS 2022 Sustainability Report. Amazon Web Services.
+4. **ASHRAE (2021).** Data Center Power and Cooling Best Practices.
+5. **Luccioni, A.S., Viguier, S., & Ligozat, A.L. (2023).** Estimating the Carbon Footprint of BLOOM. *Journal of Machine Learning Research.*

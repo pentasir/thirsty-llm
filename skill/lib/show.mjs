@@ -126,7 +126,7 @@ function row(label, color, totals) {
 }
 
 console.log('');
-console.log(`${B}💧 Claude Water Footprint${R}  ${D}(Li et al. 2023 · ±50% accuracy)${R}`);
+console.log(`${B}💧 Claude Water Footprint${R}  ${D}(ML.ENERGY 2025 · ±50% accuracy)${R}`);
 console.log('');
 row('This session',  CY, sT);
 row('Today',         BL, dT);

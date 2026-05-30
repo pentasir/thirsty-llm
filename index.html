@@ -442,11 +442,11 @@
         </svg>
       </span>
       <div>
-        <div class="brand-eyebrow">Estimated · Li et al. 2023</div>
+        <div class="brand-eyebrow">Estimated · ML.ENERGY 2025</div>
         <h1>Claude Water Footprint</h1>
       </div>
     </div>
-    <span class="badge">Formula v1.2 · Li et al. 2023 · ±50%</span>
+    <span class="badge">Formula v1.3 · ML.ENERGY 2025 · ±50%</span>
     <div class="header-right">
       <div id="file-tag"></div>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
@@ -481,7 +481,7 @@
   <div id="stats" hidden></div>
 
   <details id="methodology">
-    <summary>How we calculate — Li et al. 2023 · arXiv:2304.03271</summary>
+    <summary>How we calculate — ML.ENERGY Leaderboard v3.0 · NeurIPS 2025</summary>
     <div class="meth-body">
       <h3>Formula chain</h3>
       <p>Water flows through: effective token count → model multiplier → water rate (low / mid / high). All three scenarios are always reported — never just one number.</p>
@@ -497,9 +497,9 @@ water_mL      = scaled_tokens × rate   // three scenarios</div>
       <h3>Water rates (mL / effective token)</h3>
       <table>
         <tr><th>Scenario</th><th>Rate</th><th>WUE</th><th>Basis</th></tr>
-        <tr><td>Low (optimistic)</td><td>0.0014</td><td>0.18 L/kWh</td><td>AWS modern, cool climate</td></tr>
-        <tr><td>Mid (central) ✶</td><td>0.014</td><td>1.8 L/kWh</td><td>Li et al. 2023 US average</td></tr>
-        <tr><td>High (pessimistic)</td><td>0.031</td><td>4.0 L/kWh</td><td>Hot climate, older facility</td></tr>
+        <tr><td>Low (optimistic)</td><td>0.000036</td><td>0.18 L/kWh</td><td>AWS modern, cool climate</td></tr>
+        <tr><td>Mid (central) ✶</td><td>0.00036</td><td>1.8 L/kWh</td><td>ML.ENERGY 2025 US average</td></tr>
+        <tr><td>High (pessimistic)</td><td>0.00079</td><td>4.0 L/kWh</td><td>Hot climate, older facility</td></tr>
       </table>
       <p>✶ Charts and main values show mid. The low–high band reflects WUE uncertainty across different data centre locations. Anthropic does not disclose which AWS regions handle inference.</p>
 
@@ -511,14 +511,14 @@ water_mL      = scaled_tokens × rate   // three scenarios</div>
         <tr><td>Sonnet 4.6 (baseline)</td><td>$15/MTok</td><td>1.00×</td></tr>
         <tr><td>Opus 4.5–4.8</td><td>$25/MTok</td><td>1.67×</td></tr>
       </table>
-      <p>Multipliers are derived at calculation time as <code>model output price ÷ baseline ($15)</code>. Pricing includes margin, so treat multipliers as ±factor-of-2. Verified against the live Anthropic pricing page on 2026-05-30. The mid rate is anchored to Li et al. (GPT-3 era); directional accuracy (Haiku &lt; Sonnet &lt; Opus) holds, and absolute magnitudes carry the ±50% uncertainty.</p>
+      <p>Multipliers are derived at calculation time as <code>model output price ÷ baseline ($15)</code>. Pricing includes margin, so treat multipliers as ±factor-of-2. Verified against the live Anthropic pricing page on 2026-05-30. Directional accuracy (Haiku &lt; Sonnet &lt; Opus) holds; absolute magnitudes carry the ±50% uncertainty.</p>
 
-      <h3>Empirical anchor</h3>
-      <p>Li et al. 2023: ChatGPT consumes ~500 mL per 20–50 simple conversations in the US.<br>
-         Reverse: 500 mL ÷ 30 conversations ÷ 1,200 tokens/conversation = <strong>0.014 mL/token</strong> (mid rate).</p>
+      <h3>Empirical anchor (v1.3)</h3>
+      <p><strong>ML.ENERGY Leaderboard v3.0 (Dec 2025):</strong> Llama 3.1 70B FP8 on 8×H100 = <strong>0.39 J/output token</strong> (GPU, measured via NVML). Apply 1.82× server overhead (GPU ≈ 55% of DGX H100 TDP) → 0.71 J/token at IT load. At US average WUE (1.8 L/kWh): 0.71 ÷ 3,600,000 × 1800 = <strong>0.00036 mL/token</strong> (mid rate). Llama 70B is used as the closest publicly-measured proxy for Claude Sonnet — Anthropic does not disclose its hardware or energy use.</p>
+      <p style="margin-top:8px;font-size:0.85em;color:var(--muted)">Prior anchor (Li et al. 2023, GPT-3 era): 0.014 mL/token — 39× higher. The paper's lead author confirmed (2026-05-31) those estimates should not be applied to modern models. See methodology.md for the full correspondence.</p>
 
       <h3>Note on cache_read weight (0.001×)</h3>
-      <p>The pricing proxy gives ~0.02× ($0.30/$15 MTok). At that weight, cache reads dominate long-context Claude Code sessions — 8.7 M cache tokens produce 2.4 L, contradicting the 500 mL / 30-conversation anchor. The 0.001 floor prevents dominance while acknowledging that some compute is involved. A v2 formula will introduce a <code>cache_size × output_tokens</code> cross-term. The deviation from the pricing proxy is documented in formula.json and absorbed by the ±50% accuracy band.</p>
+      <p>The pricing proxy gives ~0.02× ($0.30/$15 MTok). At that weight, cache reads dominate long-context Claude Code sessions. The 0.001 floor prevents dominance while acknowledging that some compute is involved. A v2 formula will introduce a <code>cache_size × output_tokens</code> cross-term. The deviation from the pricing proxy is documented in formula.json and absorbed by the ±50% accuracy band.</p>
 
       <h3>Verify security</h3>
       <p>Open DevTools → Network tab → drop your log file → confirm zero requests appear. The page uses no browser storage APIs, no analytics endpoints, and no external resources — view source to verify.</p>
@@ -527,18 +527,20 @@ water_mL      = scaled_tokens × rate   // three scenarios</div>
 
   <footer>
     <p class="priv">⚑ Zero network requests · Stateless · Fully offline</p>
-    <p style="margin-top:4px">Source: Li et al. 2023, <a href="https://arxiv.org/abs/2304.03271">arXiv:2304.03271</a> · Formula v1.2 · Estimates ±50%</p>
+    <p style="margin-top:4px">Source: <a href="https://ml.energy/leaderboard/">ML.ENERGY Leaderboard v3.0</a> · Formula v1.3 · Estimates ±50%</p>
   </footer>
 
 </div>
 <script>
 // ============================================================
-// FORMULA CONSTANTS — inlined from ~/.claude/formula.json v1.2
-// Last synced from formula.json v1.2 on 2026-05-30 (pricing verified vs live Anthropic page)
-// Source: Li et al. 2023, arXiv:2304.03271
+// FORMULA CONSTANTS — inlined from ~/.claude/formula.json v1.3
+// Last synced from formula.json v1.3 on 2026-05-31
+// Source: ML.ENERGY Leaderboard v3.0 (Chung et al., NeurIPS 2025)
+// Anchor: Llama 3.1 70B FP8 on 8×H100, 0.39 J/token GPU → 0.00036 mL/token at US avg WUE
+// Prior anchor (Li et al. 2023, GPT-3 era, 0.014 mL/token) was 39× higher — superseded
 // ============================================================
 const F = {
-  rates:   { low: 0.0014, mid: 0.014, high: 0.031 },
+  rates:   { low: 0.000036, mid: 0.00036, high: 0.00079 },
   weights: { output: 1.000, input_fresh: 0.200, cache_creation: 0.250, cache_read: 0.001 },
   pricing: {
     'claude-haiku-4-5':           5.00,

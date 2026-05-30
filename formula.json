@@ -1,14 +1,14 @@
 {
-  "version": "1.2",
-  "source": "Li et al. 2023, arXiv:2304.03271",
+  "version": "1.3",
+  "source": "ML.ENERGY Leaderboard v3.0 (Chung et al., NeurIPS 2025); Li et al. 2023, arXiv:2304.03271 (methodology framework, WUE values)",
   "notes": "Single source of truth for water calculation constants. Read by the Node skill at display-time and inlined into the static dashboard at build time. Never hardcode these values elsewhere. Bump version when any constant changes.",
 
   "ml_per_effective_token": {
-    "low":  0.0014,
-    "mid":  0.014,
-    "high": 0.031,
-    "basis": "Empirical anchor from Li et al. 2023 Section 4.2, Table 3: ~500mL per 20-50 ChatGPT conversations (US data centres). Mid = 500mL / (30 conversations × 1200 tokens) = 0.0139 mL/token, rounded to 0.014. Low/high scaled by WUE ratio: low uses AWS modern WUE (0.18 L/kWh), high uses hot-climate max (4.0 L/kWh), vs central US average (1.8 L/kWh) used by Li et al.",
-    "calibration_note": "The 0.014 rate was derived from total token count treating all types equally. Token weights below adjust the relative cost of each type — they improve accuracy when the mix is known but are not independently calibrated against a second empirical dataset. This is part of the ±50% uncertainty budget."
+    "low":  0.000036,
+    "mid":  0.00036,
+    "high": 0.00079,
+    "basis": "Empirical anchor updated in v1.3 from ML.ENERGY Leaderboard v3.0 (Dec 2025): Llama 3.1 70B FP8 on 8×H100 GPUs measures ~0.39 J/output token (GPU power via NVML). Server overhead applied: H100 GPU ≈ 55% of DGX H100 server TDP (5600W GPU / 10200W total) → factor 1.82×, giving 0.71 J/token at IT load. Mid = 0.71 J ÷ 3,600,000 J/kWh × 1.8 L/kWh (US average WUE) × 1000 mL/L = 0.000355 mL/token, rounded to 0.00036. Low/high scaled by WUE ratio: low uses AWS modern WUE (0.18 L/kWh), high uses hot-climate max (4.0 L/kWh). Prior anchor (Li et al. 2023, GPT-3 175B era) gave 0.014 mL/token — 39× higher. The original paper's lead author confirmed (2026-05-31) that those estimates should not be directly applied to modern models, as inference efficiency has improved significantly since 2023.",
+    "calibration_note": "The 0.00036 rate is anchored to Llama 3.1 70B FP8 as a Claude Sonnet-class proxy — Anthropic does not disclose Claude's architecture or energy use. Llama 70B is used as the closest publicly-measured open model. Token weights below adjust the relative cost of each type; they improve accuracy when the mix is known but are not independently calibrated against a second empirical dataset. This is part of the ±50% uncertainty budget."
   },
 
   "token_weights": {
@@ -46,8 +46,8 @@
 
   "validation": {
     "test_input_effective_tokens": 36000,
-    "expected_mid_ml": 504,
+    "expected_mid_ml": 13,
     "tolerance_pct": 10,
-    "basis": "Li et al.: 500mL per ~30 conversations × ~1200 tokens = 36000 tokens. Formula gives 504mL. NOTE: this validates arithmetic only — the anchor and the constant are derived from the same source. See methodology.md appendix for independent energy-chain cross-check and its uncertainty."
+    "basis": "ML.ENERGY anchor: 36,000 output tokens × 0.00036 mL/token = 12.96 mL ≈ 13 mL. Validates arithmetic only — the anchor and constant are derived from the same source. For reference: the prior Li et al. anchor gave 504 mL for 36,000 tokens (same conversation volume, GPT-3 era hardware). The ~39× reduction reflects measured efficiency improvements in modern inference (better hardware, quantization, optimised serving engines)."
   }
 }
