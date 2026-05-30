@@ -89,7 +89,7 @@ node ~/.claude/skills/water/lib/show.mjs
 **In the dashboard** - visual breakdowns:
 
 1. Open `index.html` in any browser (or the [live dashboard](https://pentasir.github.io/thirsty-llm/)).
-2. Drag `~/.claude/water-log.jsonl` onto the drop zone.
+2. Drag `~/.claude/water-log.jsonl` onto the drop zone. If you can't see this file it lives in your userfolder (in Mac) and you can press CMD+shift+G and type "~/.claude" to open Claude's directory file. You will find the water-log.jsonl file there.
 3. Explore: today, last 7 days, lifetime, by model, by project, by session, and relatable comparisons (cups, bottles).
 
 No log yet? Drop `examples/sample-water-log.jsonl` to see it populated with sample data.
