@@ -8,7 +8,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 [![No API key](https://img.shields.io/badge/API_key-none-22c55e?style=flat-square)](#why-its-private-by-design)
 [![Network requests](https://img.shields.io/badge/network_requests-zero-22c55e?style=flat-square)](#why-its-private-by-design)
-[![Methodology](https://img.shields.io/badge/methodology-Li_et_al._2023-8b5cf6?style=flat-square)](https://arxiv.org/abs/2304.03271)
+[![Methodology](https://img.shields.io/badge/methodology-ML.ENERGY_2025-8b5cf6?style=flat-square)](https://ml.energy/leaderboard/)
 
 **[Try the live dashboard →](https://pentasir.github.io/thirsty-llm/)**
 
