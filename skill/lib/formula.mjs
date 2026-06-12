@@ -46,6 +46,16 @@ export function calculateWater(usage, model) {
 }
 
 /**
+ * Whether a model ID has its own entry in the pricing table. Unknown models
+ * fall back to the default (baseline) multiplier, which silently misprices
+ * every new model release until formula.json is updated — callers use this
+ * to warn instead of staying silent.
+ */
+export function isKnownModel(model) {
+  return Object.hasOwn(getFormula().model_pricing_per_mtok_output_usd, model);
+}
+
+/**
  * Run the built-in validation test from formula.json.
  * Throws if the formula output deviates beyond tolerance.
  */

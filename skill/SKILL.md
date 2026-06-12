@@ -1,6 +1,6 @@
 # /water — Claude Water Footprint
 
-Track and display the water footprint of your Claude sessions, based on Li et al. 2023.
+Track and display the water footprint of your Claude sessions, anchored to ML.ENERGY Leaderboard v3.0 measurements (methodology framework: Li et al. 2023).
 
 ## When to invoke
 
@@ -24,7 +24,8 @@ formatted for terminal output.
 ```bash
 node ~/.claude/skills/water/lib/show.mjs --validate
 ```
-Checks two things: (1) the 504 mL arithmetic anchor, and (2) the pricing
+Checks two things: (1) the arithmetic anchor (36,000 output tokens ≈ 13 mL
+under the v1.3 ML.ENERGY formula), and (2) the pricing
 structure — a missing/zero baseline, a non-numeric price, or a multiplier
 outside 0.01–10× (typo guard) fail with exit 1. It also *warns* if pricing
 was last verified over 120 days ago. Note: it cannot tell whether prices are
@@ -34,13 +35,14 @@ was last verified over 120 days ago. Note: it cannot tell whether prices are
 ```bash
 cat ~/.claude/skills/water/methodology.md
 ```
-Then summarise the key points: Li et al. anchor, token weights, ±50% accuracy claim.
+Then summarise the key points: ML.ENERGY anchor, token weights, ±50% accuracy claim.
 
 **`/water export`** — show the raw log:
 ```bash
 cat ~/.claude/water-log.jsonl
 ```
-Tell the user they can drag this file into the water dashboard (when built) for visualisations.
+Tell the user they can drag this file into the dashboard for visualisations —
+`index.html` in the repo, or the hosted copy at https://pentasir.github.io/thirsty-llm/.
 
 **`/water reset`** — the user wants to clear their log. Ask for confirmation first.
 If confirmed: `mv ~/.claude/water-log.jsonl ~/.claude/water-log.jsonl.bak`
@@ -64,4 +66,4 @@ and that the hook entry should point to `~/.claude/skills/water/hook.sh`.
 - Formula constants: `~/.claude/formula.json`
 - Methodology: `~/.claude/skills/water/methodology.md`
 - Accuracy: ±50% — always report the range, never a single figure
-- Source: Li et al. 2023, arXiv:2304.03271
+- Sources: ML.ENERGY Leaderboard v3.0 (Chung et al., NeurIPS 2025); Li et al. 2023, arXiv:2304.03271 (methodology framework)

@@ -7,7 +7,7 @@
 
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { homedir } from 'os';
-import { calculateWater, validate as validateFormula, checkPricing } from './formula.mjs';
+import { calculateWater, validate as validateFormula, checkPricing, isKnownModel } from './formula.mjs';
 
 const HOME     = homedir();   // cross-platform: $HOME on Unix, %USERPROFILE% on Windows
 const LOG_PATH = `${HOME}/.claude/water-log.jsonl`;
@@ -133,6 +133,22 @@ row('Today',         BL, dT);
 row('This week',     YL, wT);
 row('Lifetime',      MG, lT);
 console.log('');
+
+// Unknown models silently fall back to the default (baseline) multiplier —
+// surface them so new model releases get added to formula.json promptly.
+const unknownModels = new Map();
+for (const e of all) {
+  if (e.model && !isKnownModel(e.model)) {
+    unknownModels.set(e.model, (unknownModels.get(e.model) ?? 0) + 1);
+  }
+}
+if (unknownModels.size > 0) {
+  for (const [m, n] of unknownModels) {
+    console.log(`   ${YL}⚠ ${n} turn${n !== 1 ? 's' : ''} used "${m}" — not in formula.json pricing; estimated at the default (Sonnet baseline) multiplier${R}`);
+  }
+  console.log(`   ${D}Add the model's output price to ~/.claude/formula.json (model_pricing_per_mtok_output_usd)${R}`);
+  console.log('');
+}
 
 // Stale data warning — no shell/execSync; use readdirSync + statSync instead
 try {

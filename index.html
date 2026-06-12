@@ -446,7 +446,7 @@
         <h1>Claude Water Footprint</h1>
       </div>
     </div>
-    <span class="badge">Formula v1.3 · ML.ENERGY 2025 · ±50%</span>
+    <span class="badge">Formula v1.3.1 · ML.ENERGY 2025 · ±50%</span>
     <div class="header-right">
       <div id="file-tag"></div>
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Toggle dark mode">
@@ -503,15 +503,16 @@ water_mL      = scaled_tokens × rate   // three scenarios</div>
       </table>
       <p>✶ Charts and main values show mid. The low–high band reflects WUE uncertainty across different data centre locations. Anthropic does not disclose which AWS regions handle inference.</p>
 
-      <h3>Model multipliers (pricing-derived, verified 2026-05-30)</h3>
+      <h3>Model multipliers (pricing-derived, verified 2026-06-12)</h3>
       <table>
         <tr><th>Model</th><th>Output price</th><th>Multiplier</th></tr>
         <tr><td>Haiku 4.5</td><td>$5/MTok</td><td>0.33×</td></tr>
         <tr><td>Sonnet 4.5</td><td>$15/MTok</td><td>1.00×</td></tr>
         <tr><td>Sonnet 4.6 (baseline)</td><td>$15/MTok</td><td>1.00×</td></tr>
         <tr><td>Opus 4.5–4.8</td><td>$25/MTok</td><td>1.67×</td></tr>
+        <tr><td>Fable 5 / Mythos 5</td><td>$50/MTok</td><td>3.33×</td></tr>
       </table>
-      <p>Multipliers are derived at calculation time as <code>model output price ÷ baseline ($15)</code>. Pricing includes margin, so treat multipliers as ±factor-of-2. Verified against the live Anthropic pricing page on 2026-05-30. Directional accuracy (Haiku &lt; Sonnet &lt; Opus) holds; absolute magnitudes carry the ±50% uncertainty.</p>
+      <p>Multipliers are derived at calculation time as <code>model output price ÷ baseline ($15)</code>. Pricing includes margin, so treat multipliers as ±factor-of-2. Verified against the live Anthropic models documentation on 2026-06-12. Directional accuracy (Haiku &lt; Sonnet &lt; Opus &lt; Fable) holds; absolute magnitudes carry the ±50% uncertainty. Models not in the table fall back to the Sonnet baseline (1.00×).</p>
 
       <h3>Empirical anchor (v1.3)</h3>
       <p><strong>ML.ENERGY Leaderboard v3.0 (Dec 2025):</strong> Llama 3.1 70B FP8 on 8×H100 = <strong>0.39 J/output token</strong> (GPU, measured via NVML). Apply 1.82× server overhead (GPU ≈ 55% of DGX H100 TDP) → 0.71 J/token at IT load. At US average WUE (1.8 L/kWh): 0.71 ÷ 3,600,000 × 1800 = <strong>0.00036 mL/token</strong> (mid rate). Llama 70B is used as the closest publicly-measured proxy for Claude Sonnet — Anthropic does not disclose its hardware or energy use.</p>
@@ -527,14 +528,14 @@ water_mL      = scaled_tokens × rate   // three scenarios</div>
 
   <footer>
     <p class="priv">⚑ Zero network requests · Stateless · Fully offline</p>
-    <p style="margin-top:4px">Source: <a href="https://ml.energy/leaderboard/">ML.ENERGY Leaderboard v3.0</a> · Formula v1.3 · Estimates ±50%</p>
+    <p style="margin-top:4px">Source: <a href="https://ml.energy/leaderboard/">ML.ENERGY Leaderboard v3.0</a> · Formula v1.3.1 · Estimates ±50%</p>
   </footer>
 
 </div>
 <script>
 // ============================================================
-// FORMULA CONSTANTS — inlined from ~/.claude/formula.json v1.3
-// Last synced from formula.json v1.3 on 2026-05-31
+// FORMULA CONSTANTS — inlined from ~/.claude/formula.json v1.3.1
+// Last synced from formula.json v1.3.1 on 2026-06-12
 // Source: ML.ENERGY Leaderboard v3.0 (Chung et al., NeurIPS 2025)
 // Anchor: Llama 3.1 70B FP8 on 8×H100, 0.39 J/token GPU → 0.00036 mL/token at US avg WUE
 // Prior anchor (Li et al. 2023, GPT-3 era, 0.014 mL/token) was 39× higher — superseded
@@ -551,6 +552,8 @@ const F = {
     'claude-opus-4-6':           25.00,
     'claude-opus-4-7':           25.00,
     'claude-opus-4-8':           25.00,
+    'claude-fable-5':            50.00,
+    'claude-mythos-5':           50.00,
   },
   baselinePrice: 15.00,
 };
@@ -1131,15 +1134,21 @@ function handleFile(file) {
       return;
     }
     renderStats(entries);
-    setFileTag(file.name, entries.length, skipped);
+    // Models missing from F.pricing fall back to the baseline multiplier —
+    // surface them so the estimate isn't silently mispriced for new releases.
+    const unknown = new Set(entries.map(e => e.model).filter(m => m && !(m in F.pricing)));
+    setFileTag(file.name, entries.length, skipped, [...unknown]);
     document.getElementById('dropzone').hidden = true;
   };
   reader.readAsText(file);
 }
 
-function setFileTag(name, count, skipped) {
+function setFileTag(name, count, skipped, unknownModels = []) {
   const tag    = document.getElementById('file-tag');
-  const skipTxt = skipped > 0 ? ` · <span class="ft-warn">${skipped} skipped</span>` : '';
+  const unkTxt  = unknownModels.length > 0
+    ? ` · <span class="ft-warn" title="Estimated at the Sonnet baseline multiplier — model not in the pricing table">${unknownModels.map(esc).join(', ')}: unknown pricing</span>`
+    : '';
+  const skipTxt = (skipped > 0 ? ` · <span class="ft-warn">${skipped} skipped</span>` : '') + unkTxt;
   tag.className = 'file-tag';
   tag.innerHTML = `
     <span class="ft-dot"></span>

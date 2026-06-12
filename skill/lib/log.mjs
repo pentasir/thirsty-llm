@@ -5,7 +5,10 @@
  *
  * Reads the Stop hook payload, finds unprocessed assistant entries in the
  * transcript since the last cursor position, and appends one JSONL line of
- * RAW TOKEN COUNTS to ~/.claude/water-log.jsonl.
+ * RAW TOKEN COUNTS per model used in the turn (usually one) to
+ * ~/.claude/water-log.jsonl. A turn can span multiple models — e.g. Haiku
+ * subagents inside a Sonnet turn — and lumping them under one model would
+ * skew the per-model view and the pricing-derived multiplier.
  *
  * Water values are NOT pre-computed — derived at display-time so formula
  * updates retroactively apply to all historical entries.
@@ -94,39 +97,45 @@ async function run(payload) {
 
   if (newEntries.length === 0 || !latestUuid || latestUuid === lastUuid) return;
 
-  // --- aggregate raw token counts (no water pre-computation) ---
-  const usage = newEntries.reduce((acc, e) => {
+  // --- aggregate raw token counts per model (no water pre-computation) ---
+  const perModel = new Map();
+  for (const e of newEntries) {
     const u = e.message.usage;
+    const m = e.message.model ?? 'claude-sonnet-4-6';
+    const acc = perModel.get(m) ?? { in: 0, out: 0, cache_r: 0, cache_w: 0 };
     acc.in      += u.input_tokens                ?? 0;
     acc.out     += u.output_tokens               ?? 0;
     acc.cache_r += u.cache_read_input_tokens     ?? 0;
     acc.cache_w += u.cache_creation_input_tokens ?? 0;
-    return acc;
-  }, { in: 0, out: 0, cache_r: 0, cache_w: 0 });
+    perModel.set(m, acc);
+  }
 
   const last    = newEntries[newEntries.length - 1];
-  const model   = last.message.model ?? 'claude-sonnet-4-6';
   const project = cwd.split(/[\\/]/).pop() ?? '';   // handle both / (Unix) and \ (Windows) separators
   // geo: empty string currently; preserved for future per-region WUE narrowing
   const geo     = last.message.usage?.inference_geo || null;
 
-  const logEntry = {
-    v:         1,
-    formula_v: '1.2',
-    ts:        new Date().toISOString(),
-    session:   sessionId,
-    model,
-    in:        usage.in,
-    out:       usage.out,
-    cache_r:   usage.cache_r,
-    cache_w:   usage.cache_w,
-    project,
-    entrypoint,
-    geo,
-  };
+  const ts        = new Date().toISOString();
+  const formula_v = formulaVersion();
+  const logLines = [...perModel.entries()].map(([model, usage]) =>
+    JSON.stringify({
+      v:         1,
+      formula_v,
+      ts,
+      session:   sessionId,
+      model,
+      in:        usage.in,
+      out:       usage.out,
+      cache_r:   usage.cache_r,
+      cache_w:   usage.cache_w,
+      project,
+      entrypoint,
+      geo,
+    }) + '\n'
+  );
 
   try {
-    appendFileSync(LOG_PATH, JSON.stringify(logEntry) + '\n', { mode: 0o600 });
+    appendFileSync(LOG_PATH, logLines.join(''), { mode: 0o600 });
     ensureMode(LOG_PATH); // post-write chmod covers new-file creation (mode option only applies on create, not on existing files with wrong perms)
   } catch (e) { logError(`Could not write log: ${e?.message}`); return; }
 

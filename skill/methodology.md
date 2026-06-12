@@ -48,12 +48,15 @@ Multipliers are derived from Anthropic's public output-token pricing at calculat
 | Claude Sonnet 4.5 | $15/MTok | 1.00× |
 | Claude Sonnet 4.6 | $15/MTok | 1.00× (baseline) |
 | Claude Opus 4.5–4.8 | $25/MTok | 1.67× |
+| Claude Fable 5 / Mythos 5 | $50/MTok | 3.33× |
 
 ```
 scaled_tokens = effective_tokens × model_multiplier
 ```
 
-**Pricing verified:** 2026-05-30 against the live Anthropic pricing page (https://www.anthropic.com/pricing). If Anthropic updates pricing, update `formula.json` and bump the `_checked` field.
+**Pricing verified:** 2026-06-12 against the live Anthropic models documentation (https://platform.claude.com/docs/en/about-claude/models/overview.md). If Anthropic updates pricing, update `formula.json` and bump the `_checked` field. Models not in the table fall back to the baseline 1.00× multiplier — the terminal view and dashboard warn when this happens.
+
+**Fable 5 caveat (v1.3.1):** Claude Fable 5 / Mythos 5 use a new tokenizer that produces ~30% more tokens than pre-Opus-4.7 models for the same content, so its per-token price embeds a different token granularity. The pricing-derived 3.33× multiplier is therefore a rougher proxy for this tier than for the 4.x family; the ±factor-of-2 band on multipliers absorbs this.
 
 **Correction note (2026-05-30, patch 3):** All prices re-verified against the live page. Haiku 4.5 corrected $0.80→$5 (0.053×→0.33×); Sonnet 4.5 corrected $12→$15 (0.80×→1.00×, now matches baseline); Opus 4.5 $60→$25, Opus 4.7 $75→$25; Opus 4.6 and 4.8 added at $25. Sonnet 4.6 baseline unchanged — historical data unaffected.
 
@@ -145,7 +148,7 @@ These unknowns drive the ±50% uncertainty band. The WUE variance alone spans a 
 Each turn appends one line to `~/.claude/water-log.jsonl`:
 
 ```jsonl
-{"v":1,"formula_v":"1.2","ts":"2026-05-28T10:59:00Z","session":"abc123","model":"claude-sonnet-4-6","in":3,"out":153,"cache_r":12095,"cache_w":19036,"project":"career-ops","entrypoint":"cli","geo":null}
+{"v":1,"formula_v":"1.3.1","ts":"2026-05-28T10:59:00Z","session":"abc123","model":"claude-sonnet-4-6","in":3,"out":153,"cache_r":12095,"cache_w":19036,"project":"career-ops","entrypoint":"cli","geo":null}
 ```
 
 Water values are **not stored** in the log. They are derived on read from `formula.json`, so any formula update immediately propagates to all historical entries without migration.
@@ -157,11 +160,11 @@ Water values are **not stored** in the log. They are derived on read from `formu
 ## Known Limitations
 
 - **Model proxy is assumed:** ML.ENERGY measured Llama 3.1 70B FP8 on H100. We treat this as a reasonable Claude Sonnet-class proxy. Anthropic does not disclose Claude's architecture, parameter count, or energy use. Directional accuracy (Haiku < Sonnet < Opus) is preserved by pricing-derived multipliers; absolute magnitudes may differ.
-- **Token weights are partially cited:** The 5:1 output:input ratio is pricing-derived, not measured. Cache_read (0.001×) is a floor value to prevent long-context dominance — not independently measured. Both flagged for v1.2.
-- **Model multipliers are point estimates:** Opus 3.0× likely represents a range of 2–5×. Using a point value understates total uncertainty.
+- **Token weights are partially cited:** The 5:1 output:input ratio is pricing-derived, not measured. Cache_read (0.001×) is a floor value to prevent long-context dominance — not independently measured. Both remain open items for a future formula version.
+- **Model multipliers are point estimates:** e.g. Opus's pricing-derived 1.67× is a point value; the true compute ratio may differ by a factor of ~2 in either direction. Using a point value understates total uncertainty.
 - **Timezone handling:** Log entries are stored in UTC. "Today" and "this week" are computed in local time. Multi-day sessions that cross midnight may be split across days.
 - **Log rotation:** After a year of heavy use the log may reach 50–100 MB. Parse time will grow. Future: archive old years to `water-log.YYYY.jsonl`.
-- **Unix only:** `hook.sh` requires a POSIX shell and Node.js on PATH. Windows requires WSL.
+- **Node.js required:** the hook needs Node.js on PATH. macOS/Linux register `hook.sh` (POSIX shell); native Windows is supported via `install.ps1`, which registers a direct `node` command — no WSL required.
 
 ## Accuracy Claim
 

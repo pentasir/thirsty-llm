@@ -20,7 +20,7 @@ Every prompt you send to a large language model runs on hardware in a data centr
 
 It has two parts:
 
-1. **Claude Code skill** that logs token usage per turn to a local file (`~/.claude/water-log.jsonl`) uses no network, no API key, just file I/O.
+1. **Claude Code skill** that logs token usage per turn to a local file (`~/.claude/water-log.jsonl`) — one line per model used in the turn (usually one) — uses no network, no API key, just file I/O.
 2. A **single-file dashboard** you open in your browser and drop that log onto — it renders your water footprint entirely client-side.
 
 > [!NOTE]
@@ -104,7 +104,7 @@ Claude Code session
       ▼
 skill/hook.sh → lib/log.mjs
       │  reads the session transcript, extracts token usage,
-      │  appends ONE line of numbers (no prompt/response content)
+      │  appends one line of numbers per model used (no prompt/response content)
       ▼
 ~/.claude/water-log.jsonl
       │  (drag & drop — never uploaded)
@@ -115,7 +115,7 @@ index.html  →  parses locally, derives water from formula.json, renders
 A log entry looks like this (numbers only):
 
 ```json
-{"v":1,"formula_v":"1.2","ts":"2026-05-30T00:47:51Z","session":"924d2156…","model":"claude-sonnet-4-6","in":12,"out":1116,"cache_r":48236,"cache_w":70232,"project":"web-app","entrypoint":"cli"}
+{"v":1,"formula_v":"1.3.1","ts":"2026-05-30T00:47:51Z","session":"924d2156…","model":"claude-sonnet-4-6","in":12,"out":1116,"cache_r":48236,"cache_w":70232,"project":"web-app","entrypoint":"cli"}
 ```
 
 `formula.json` is the **single source of truth** for the calculation constants. Both the skill and the dashboard read the same numbers (the dashboard inlines a copy so it can run offline as a single file).
