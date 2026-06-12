@@ -16,7 +16,7 @@
 
 </div>
 
-Every prompt you send to a large language model runs on hardware in a data centre that's cooled with water. **ThirstyLLM** estimates how much, based on the methodology in Li et al. 2023, *["Making AI Less 'Thirsty'"](https://arxiv.org/abs/2304.03271)*.
+Every prompt you send to a large language model runs on hardware in a data centre that's cooled with water. **ThirstyLLM** estimates how much — anchored to measured inference-energy data from the [ML.ENERGY Leaderboard](https://ml.energy/leaderboard/) (NeurIPS 2025), using the water-footprint framework from Li et al. 2023, *["Making AI Less 'Thirsty'"](https://arxiv.org/abs/2304.03271)*.
 
 It has two parts:
 
@@ -127,20 +127,21 @@ A log entry looks like this (numbers only):
 Water is derived from token counts through three steps. Full detail lives in [`skill/methodology.md`](skill/methodology.md) and inside the dashboard's "How we calculate" panel.
 
 1. **Effective tokens:**  token types are weighted by relative compute cost (output `1.0×`, fresh input `0.20×`, cache write `0.25×`, cache read `0.001×`).
-2. **Model multiplier:** derived from Anthropic's published output-token pricing as a compute proxy (Haiku `0.33×`, Sonnet `1.00×` baseline, Opus `1.67×`), verified against the live pricing page.
-3. **Water rate:**  anchored to Li et al.'s empirical figure (~500 mL per ~30 conversations ≈ `0.014 mL` per effective token), reported as a **low / mid / high** range reflecting data-centre location uncertainty (WUE 0.18–4.0 L/kWh).
+2. **Model multiplier:** derived from Anthropic's published output-token pricing as a compute proxy (Haiku `0.33×`, Sonnet `1.00×` baseline, Opus `1.67×`, Fable `3.33×`), verified against Anthropic's live models documentation.
+3. **Water rate:**  anchored to ML.ENERGY's measured inference energy (~0.39 J per output token, Llama 3.1 70B on H100 as a Claude-class proxy) ≈ `0.00036 mL` per effective token at US-average water-use efficiency, reported as a **low / mid / high** range reflecting data-centre location uncertainty (WUE 0.18–4.0 L/kWh).
 
 **Honesty notes:**
 - Every figure is shown as a range, never a single fake-precise number.
 - The pricing proxy includes margin, so multipliers are `±factor-of-2`.
-- The empirical anchor was measured on GPT-3-class models; absolute magnitudes carry the ±50% band. Directional accuracy (Haiku < Sonnet < Opus) is preserved.
+- The anchor is measured on open hardware (Llama 70B on H100), not on Claude itself; absolute magnitudes carry the ±50% band. Directional accuracy (Haiku < Sonnet < Opus < Fable) is preserved.
+- The original Li et al. 2023 anchor (GPT-3 era, `0.014 mL`/token) overestimated modern inference ~39× — the paper's lead author confirmed it shouldn't be applied to today's models, and v1.3 re-anchored accordingly. See [methodology.md](skill/methodology.md).
 - Anthropic doesn't disclose which data centres handle inference, which is the largest source of uncertainty.
 
 ### Maintaining the pricing proxy
 
 Model multipliers are derived at calculation time from the output-token prices in `formula.json`, so they can't drift from a hardcoded value. They *can* go stale if Anthropic changes prices. Before each release:
 
-1. Re-check every price against [anthropic.com/pricing](https://www.anthropic.com/pricing).
+1. Re-check every price against Anthropic's [models documentation](https://platform.claude.com/docs/en/about-claude/models/overview) — the old anthropic.com/pricing page no longer lists API token prices.
 2. Update `model_pricing_per_mtok_output_usd` and bump its `_checked` date.
 3. Run `bash install.sh` to deploy, then `node ~/.claude/skills/water/lib/show.mjs --validate`. (Validate reads the installed `~/.claude/formula.json`, so deploy first.) It fails on structural errors (missing baseline, bad price, multiplier outside 0.01–10×) and warns if `_checked` is over 120 days old.
 
