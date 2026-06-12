@@ -81,7 +81,7 @@ Built in a week with a deliberate split:
 
 Key lesson from the audit loop: **"pricing-derived" numbers must be re-checked against the live pricing page every release** — carrying forward stale multipliers caused a 6× Haiku overcount until we verified against anthropic.com/pricing.
 
-The full session-by-session case study (patches, tables, audit trail) is kept private for portfolio use (hire me pls) — this page is the public summary.
+The full session-by-session case study (patches, tables, audit trail) is available on request — this page is the public summary.
 
 ---
 

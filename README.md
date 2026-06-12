@@ -171,6 +171,8 @@ thirsty-llm/
 
 [Apache License 2.0](LICENSE) © 2026 Jason K. Don
 
-## Note:
+## How this was built
 
-I am not a technical person/coder - this was vibe coded because I was curious as to how much water is used per session (also why the whole thing is offline because I am not playing around with people's API keys or holding info on a website.
+Built by a non-developer using AI-assisted development — Claude for implementation, a second model for design and security review, and primary-source verification for every published constant (including correspondence with the lead author of the underlying research, which led to a public 39× downward revision of the original estimates). The full process is documented in [BUILD-STORY.md](docs/BUILD-STORY.md).
+
+The offline, no-API-key design is a deliberate consequence of that origin: a tool people are asked to trust with usage data should be *structurally* incapable of collecting it, not just promise not to.
